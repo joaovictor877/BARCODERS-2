@@ -1,13 +1,5 @@
-// Rota para listar todos os contatos cadastrados
-app.get('/api/contatos', (req, res) => {
-  connection.query('SELECT * FROM contato ORDER BY data_envio DESC', (err, results) => {
-    if (err) {
-      console.error('Erro ao buscar contatos:', err);
-      return res.status(500).json({ error: 'Erro ao buscar contatos' });
-    }
-    res.json(results);
-  });
-});
+// Este arquivo é responsável por configurar o servidor Express, rotas, CORS e usar a conexão do db.js.
+
 // Este arquivo é responsável por configurar o servidor Express, rotas, CORS e usar a conexão do db.js.
 
 const express = require('express');
