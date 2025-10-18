@@ -10,31 +10,32 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="css/style.css">
     <link rel="icon" href="assets/img/logo_amemiya.png">
+
 </head>
+<!-- Header -->
 <body class="bg-gray-50">
-    <!-- Header -->
-    <header class="bg-white shadow-sm border-b">
-        <div class="container mx-auto px-6 py-4">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-4">
-                    <div class="w-12 h-12 rounded-lg flex items-center justify-center bg-white border border-gray-200">
-                        <img src="assets/img/logo_barcoders.png" alt="Logo" class="w-full h-full object-contain rounded-lg">
-                    </div>
-                    <div>
-                        <h1 class="text-2xl font-bold text-gray-800">BARCODER'S</h1>
-                        <p class="text-gray-500 text-sm">Sistema de Gestão de Estoque</p>
-                    </div>
-                </div>
-                <nav class="hidden md:flex space-x-8">
-                    <a data-scroll="projeto" class="text-gray-600 hover:text-indigo-600 transition-colors">Projeto</a>
-                    <a data-scroll="funcionalidades" class="text-gray-600 hover:text-indigo-600 transition-colors">Funcionalidades</a>
-                    <a data-scroll="tecnologias" class="text-gray-600 hover:text-indigo-600 transition-colors">Tecnologias</a>
-                    <a data-scroll="contato" class="text-gray-600 hover:text-indigo-600 transition-colors">Contato</a>
-                    <button id="loginBtn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors">Login</button>
-                </nav>
-            </div>
-        </div>
-    </header>
+    <body class="bg-gray-50 smooth-scroll">
+  <header class="bg-white shadow-sm border-b sticky top-0 z-50">
+   <div class="container mx-auto px-6 py-4">
+    <div class="flex items-center justify-between">
+     <div class="flex items-center space-x-4">
+      <div class="w-12 h-12 rounded-lg flex items-center justify-center bg-white border border-gray-200"><img src="assets/img/logo_barcoders.png" alt="Logo BARCODER'S" class="w-full h-full object-contain rounded-lg" onerror="this.src=''; this.alt='Logo não disponível'; this.style.display='none';">
+      </div>
+      <div>
+       <h1 class="text-2xl font-bold text-gray-800">BARCODER'S</h1>
+       <p class="text-gray-500 text-sm">Sistema de Gestão de Estoque</p>
+      </div>
+     </div>
+     <nav class="hidden md:flex items-center space-x-8"><a href="#projeto" class="text-gray-600 hover:text-indigo-600 transition-colors cursor-pointer">Projeto</a> <a href="#funcionalidades" class="text-gray-600 hover:text-indigo-600 transition-colors cursor-pointer">Funcionalidades</a> <a href="#tecnologias" class="text-gray-600 hover:text-indigo-600 transition-colors cursor-pointer">Tecnologias</a> <a href="#contato" class="text-gray-600 hover:text-indigo-600 transition-colors cursor-pointer">Contato</a> <button onclick="abrirLogin()" class="bg-indigo-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors shadow-sm"> Login </button>
+     </nav><!-- Menu Mobile --> <button onclick="toggleMobileMenu()" class="md:hidden p-2 rounded-lg hover:bg-gray-100">
+      <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+      </svg></button>
+    </div><!-- Menu Mobile Expandido -->
+    <div id="mobileMenu" class="hidden md:hidden mt-4 pb-4 border-t border-gray-200">
+     <div class="flex flex-col space-y-4 pt-4"><a href="#projeto" class="text-gray-600 hover:text-indigo-600 transition-colors">Projeto</a> <a href="#funcionalidades" class="text-gray-600 hover:text-indigo-600 transition-colors">Funcionalidades</a> <a href="#tecnologias" class="text-gray-600 hover:text-indigo-600 transition-colors">Tecnologias</a> <a href="#contato" class="text-gray-600 hover:text-indigo-600 transition-colors">Contato</a> <button onclick="abrirLogin()" class="bg-indigo-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors w-full"> Login </button>
+     </div>
+    </div>
+   </div>
 
     <!-- Hero Section -->
     <section class="bg-white py-16">
