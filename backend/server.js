@@ -1,7 +1,5 @@
 // Este arquivo é responsável por configurar o servidor Express, rotas, CORS e usar a conexão do db.js.
 
-// Este arquivo é responsável por configurar o servidor Express, rotas, CORS e usar a conexão do db.js.
-
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
@@ -17,6 +15,27 @@ app.use(cors({ origin: 'https://barcoders.azurewebsites.net' }));
 app.use(express.json());
 // Permite receber dados de formulários HTML (application/x-www-form-urlencoded)
 app.use(express.urlencoded({ extended: true }));
+
+// Rota de login para autenticação de admin
+app.post('/api/login', (req, res) => {
+  const { cpf, password } = req.body;
+  if (!cpf || !password) {
+    return res.status(400).json({ success: false, message: 'CPF e senha obrigatórios.' });
+  }
+  // Ajuste o nome dos campos conforme sua tabela Funcionarios
+  const sql = 'SELECT * FROM Funcionarios WHERE cpf = ? AND senha = ? LIMIT 1';
+  connection.query(sql, [cpf, password], (err, results) => {
+    if (err) {
+      console.error('Erro ao autenticar:', err);
+      return res.status(500).json({ success: false, message: 'Erro no servidor.' });
+    }
+    if (results.length > 0) {
+      res.json({ success: true });
+    } else {
+      res.status(401).json({ success: false, message: 'CPF ou senha incorretos.' });
+    }
+  });
+});
 
 // Servir arquivos estáticos do frontend (ajuste o caminho se necessário)
 // Se o index.html está na raiz do projeto, use '..'.
@@ -53,10 +72,10 @@ app.post('/api/contact', upload.none(), (req, res) => {
 app.get('/api/estatisticas', (req, res) => {
   // Ajuste os nomes das tabelas conforme seu banco
   const queries = {
-    produtos: 'SELECT COUNT(*) AS total FROM produtos',
-    movimentacoes: 'SELECT COUNT(*) AS total FROM movimentacoes',
-    alertas: 'SELECT COUNT(*) AS total FROM alertas',
-    usuarios: 'SELECT COUNT(*) AS total FROM usuarios'
+    produtos: 'SELECT COUNT(*) AS total FROM Estoque_MP',
+    movimentacoes: 'SELECT COUNT(*) AS total FROM Registro_Movimentacao',
+    alertas: 'SELECT COUNT(*) AS total FROM Registro_Entrada_MP',
+    usuarios: 'SELECT COUNT(*) AS total FROM Funcionarios'
   };
 
   const results = {};
