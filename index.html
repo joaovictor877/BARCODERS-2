@@ -258,14 +258,9 @@
             </div>
         </div>
     </footer>
-    <!-- AVISO DE DEV LOCAL (opcional, pode remover se não quiser) -->
-    <div id="devWarning" class="fixed top-0 left-0 w-full bg-yellow-200 text-yellow-900 text-center py-2 z-50 hidden">
-        Ambiente de desenvolvimento: endpoints de API simulados.
-    </div>
     <script>
     // MOCK DE ENDPOINTS PARA QUALQUER AMBIENTE (local e produção)
     (function() {
-        document.getElementById('devWarning').classList.remove('hidden');
         const originalFetch = window.fetch;
         window.fetch = async function(resource, options) {
             // Mock para /api/contact
