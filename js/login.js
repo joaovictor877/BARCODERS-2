@@ -1,7 +1,9 @@
 // js/login.js
 
-// Defina o endpoint da API (ajuste conforme ambiente)
-const API_ENDPOINT = window.location.origin; // ou 'https://barcoders.azurewebsites.net' para produção
+// Remova a duplicidade: garanta que API_ENDPOINT só é declarado uma vez
+if (typeof API_ENDPOINT === 'undefined') {
+    var API_ENDPOINT = window.location.origin; // ou 'https://barcoders.azurewebsites.net' para produção
+}
 
 document.addEventListener('DOMContentLoaded', function () {
     const loginBtn = document.getElementById('loginBtn');
