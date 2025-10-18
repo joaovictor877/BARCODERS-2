@@ -28,7 +28,10 @@ document.addEventListener('DOMContentLoaded', function () {
             loginErrorMessage.classList.add('hidden');
             
             e.preventDefault();
-            
+
+            // Crie o formData antes de acessar os campos
+            const formData = new FormData(loginForm);
+
             // Validate form data before sending
             const email = formData.get('email');
             const password = formData.get('password');
@@ -38,7 +41,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 loginErrorMessage.classList.remove('hidden');
                 return;
             }
-            const formData = new FormData(loginForm);
             const endpoint = `${API_ENDPOINT}/api/login`; 
 
             try {
