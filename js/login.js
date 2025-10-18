@@ -1,10 +1,5 @@
 // js/login.js
 
-// Remova a duplicidade: garanta que API_ENDPOINT só é declarado uma vez
-if (typeof API_ENDPOINT === 'undefined') {
-    var API_ENDPOINT = window.location.origin; // ou 'https://barcoders.azurewebsites.net' para produção
-}
-
 document.addEventListener('DOMContentLoaded', function () {
     const loginBtn = document.getElementById('loginBtn');
     const loginModal = document.getElementById('loginModal');
@@ -28,7 +23,7 @@ document.addEventListener('DOMContentLoaded', function () {
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const formData = new FormData(loginForm);
-            const endpoint = `${API_ENDPOINT}/api/login`; // Confirma que está usando o endpoint correto
+            const endpoint = `${API_ENDPOINT}/api/login`; 
 
             try {
                 const response = await fetch(endpoint, {
@@ -52,6 +47,38 @@ document.addEventListener('DOMContentLoaded', function () {
                 console.error('Erro no login:', error);
                 loginErrorMessage.textContent = 'Erro de conexão. Tente novamente.';
                 loginErrorMessage.classList.remove('hidden');
+            }
+        });
+    }
+
+    const form = document.getElementById('loginForm');
+    if (form) {
+        form.addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const username = form.username.value;
+            const password = form.password.value;
+
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                if (!response.ok) {
+                    alert('Login failed!');
+                    return;
+                }
+
+                const data = await response.json();
+                // Handle successful login (e.g., redirect, store token, etc.)
+                alert('Login successful!');
+                // window.location.href = '/dashboard'; // Example redirect
+            } catch (error) {
+                alert('Error connecting to server.');
             }
         });
     }
