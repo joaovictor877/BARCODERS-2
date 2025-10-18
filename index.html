@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <script src="js/main.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BARCODER'S - Gestão de Estoque Amemiya</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="icon" href="assets/img/logo_amemiya.png">
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 rounded-lg flex items-center justify-center bg-white border border-gray-200">
+                        <img src="assets/img/logo_barcoders.png" alt="Logo" class="w-full h-full object-contain rounded-lg">
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-800">BARCODER'S</h1>
+                        <p class="text-gray-500 text-sm">Sistema de Gestão de Estoque</p>
+                    </div>
+                </div>
+                <nav class="hidden md:flex space-x-8">
+                    <a data-scroll="projeto" class="text-gray-600 hover:text-indigo-600 transition-colors">Projeto</a>
+                    <a data-scroll="funcionalidades" class="text-gray-600 hover:text-indigo-600 transition-colors">Funcionalidades</a>
+                    <a data-scroll="tecnologias" class="text-gray-600 hover:text-indigo-600 transition-colors">Tecnologias</a>
+                    <a data-scroll="contato" class="text-gray-600 hover:text-indigo-600 transition-colors">Contato</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="bg-white py-16">
+        <div class="container mx-auto px-6 text-center">
+            <div class="max-w-3xl mx-auto">
+                <h2 class="text-4xl font-bold text-gray-800 mb-4 flex items-center justify-center gap-2">
+                    <img src="assets/img/logo_amemiya.png" alt="Logo Amemiya" class="h-16 w-auto inline-block align-middle">
+                </h2>
+                <h3 class="text-2xl text-gray-600 mb-6">Gestão de Matéria-Prima</h3>
+                <p class="text-lg text-gray-600 mb-8 leading-relaxed">
+                    Sistema de controle de estoque com código de barras para otimizar a gestão de matérias-primas da empresa Amemiya.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <button class="bg-indigo-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-indigo-700 transition-colors">
+                        Ver Demonstração
+                    </button>
+                    <button class="border border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors">
+                        Documentação
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+   <!-- Sobre o Projeto -->
+    <section id="projeto" class="py-16 bg-white">
+        <div class="container mx-auto px-6">
+            <div class="max-w-4xl mx-auto">
+                <h2 class="text-3xl font-bold text-gray-800 text-center mb-12">Sobre o Projeto</h2>
+                <div class="grid md:grid-cols-2 gap-12 items-center">
+                    <div>
+                        <h3 class="text-2xl font-semibold text-gray-800 mb-4">Solução Completa</h3>
+                        <p class="text-gray-600 mb-6 leading-relaxed">
+                            O BARCODER'S foi desenvolvido especificamente para a empresa Amemiya, oferecendo 
+                            uma solução robusta e eficiente para o controle de estoque de matérias-primas.
+                        </p>
+                        <ul class="space-y-3">
+                            <li class="flex items-center text-gray-700">
+                                <svg class="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                </svg>
+                                Controle em tempo real
+                            </li>
+                            <li class="flex items-center text-gray-700">
+                                <svg class="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                </svg>
+                                Interface intuitiva
+                            </li>
+                            <li class="flex items-center text-gray-700">
+                                <svg class="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                </svg>
+                                Relatórios de Materias-Prima
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl p-8 text-white">
+                        <div class="text-center">
+                            <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4">
+                                <svg class="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 18l6-6-6-6" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 6l-6 6 6 6" />
+                                </svg>
+                            </div>
+                            <h4 class="text-xl font-semibold mb-2">Sistema em Implantação</h4>
+                            <p class="text-indigo-200">Solução completa em produção na Amemiya</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Funcionalidades -->
+    <section id="funcionalidades" class="py-16 bg-white">
+        <div class="container mx-auto px-6">
+            <h2 class="text-3xl font-bold text-gray-800 text-center mb-12">Principais Funcionalidades</h2>
+            <div class="max-w-4xl mx-auto grid md:grid-cols-2 gap-6">
+                <div class="bg-gray-50 rounded-lg p-6 card-hover">
+                    <div class="flex items-center mb-4">
+                        <div class="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center mr-4">
+                            <svg class="w-5 h-5 text-indigo-600" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M3 4h18v2H3V4zm0 4h18v2H3V8zm0 4h18v2H3v-2zm0 4h18v2H3v-2z"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-800">Código de Barras</h3>
+                    </div>
+                    <p class="text-gray-600">Leitura e geração automática de códigos para identificação rápida de produtos e lotes.</p>
+                </div>
+
+                <div class="bg-gray-50 rounded-lg p-6 card-hover">
+                    <div class="flex items-center mb-4">
+                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
+                            <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-800">Controle de Estoque</h3>
+                    </div>
+                    <p class="text-gray-600">Monitoramento em tempo real com alertas de reposição e níveis mínimos.</p>
+                </div>
+
+                <div class="bg-gray-50 rounded-lg p-6 card-hover">
+                    <div class="flex items-center mb-4">
+                        <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-4">
+                            <svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 2 2h16c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-800">Relatórios Gerenciais</h3>
+                    </div>
+                    <p class="text-gray-600">Relatórios de movimentação, consumo e previsão de demanda.</p>
+                </div>
+
+                <div class="bg-gray-50 rounded-lg p-6 card-hover">
+                    <div class="flex items-center mb-4">
+                        <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-4">
+                            <svg class="w-5 h-5 text-purple-600" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-800">Controle de Qualidade</h3>
+                    </div>
+                    <p class="text-gray-600">Rastreabilidade completa com controle de lotes, comparação e histórico da Matéria-Prima.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tecnologias -->
+    <section id="tecnologias" class="py-16 bg-gray-50">
+        <div class="container mx-auto px-6">
+            <h2 class="text-3xl font-bold text-gray-800 text-center mb-12">Tecnologias Utilizadas</h2>
+            <div class="max-w-4xl mx-auto">
+                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="text-center">
+                        <div class="w-16 h-16 rounded-lg flex items-center justify-center mx-auto mb-4">
+                            <img src="assets/img/js01-svgrepo-com.svg" alt="JavaScript" class="w-full h-full object-contain rounded-lg">
+                        </div>
+                        <h4 class="font-semibold text-gray-800">JavaScript</h4>
+                        <p class="text-gray-600 text-sm">Frontend & Backend</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-16 h-16 rounded-lg flex items-center justify-center mx-auto mb-4">
+                            <img src="assets/img/mysql-svgrepo-com.svg" alt="SQL" class="w-full h-full object-contain rounded-lg">
+                        </div>
+                        <h4 class="font-semibold text-gray-800">Database</h4>
+                        <p class="text-gray-600 text-sm">MySQL</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-16 h-16 rounded-lg flex items-center justify-center mx-auto mb-4">
+                            <img src="assets/img/node-js-svgrepo-com.svg" alt="Node.js" class="w-full h-full object-contain rounded-lg">
+                        </div>
+                        <h4 class="font-semibold text-gray-800">Node.js</h4>
+                        <p class="text-gray-600 text-sm">Runtime Environment</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-16 h-16 rounded-lg flex items-center justify-center mx-auto mb-4">
+                            <img src="assets/img/react-16-svgrepo-com.svg" alt="React" class="w-full h-full object-contain rounded-lg">
+                        </div>
+                        <h4 class="font-semibold text-gray-800">React</h4>
+                        <p class="text-gray-600 text-sm">Interface de Usuário</p>
+                    </div>
+                </div>
+    
+            </div>
+        </div>
+    </section>
+
+    <!-- Estatísticas -->
+<section class="py-16 bg-indigo-600">
+    <div class="container mx-auto px-6">
+        <h2 class="text-2xl font-bold text-white text-center mb-12">Resultados do Projeto</h2>
+        <div id="statsGrid" class="grid md:grid-cols-4 gap-8 text-center">
+            <!-- Os dados serão inseridos via JavaScript -->
+        </div>
+    </div>
+</section>
+
+<!-- Contato -->
+<section id="contato" class="py-16 bg-white">
+    <div class="container mx-auto px-6">
+        <div class="max-w-2xl mx-auto text-center">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">Entre em Contato</h2>
+            <p class="text-gray-600 mb-8">
+                Interessado em conhecer mais sobre o projeto BARCODER'S?
+            </p>
+            <div class="bg-gray-50 rounded-lg p-8">
+                <form id="contactForm" class="space-y-4" action="/api/contact" method="POST">
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <input type="text" name="nome" placeholder="Seu Nome" required 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                        <input type="email" name="email" placeholder="Seu Email" required 
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    </div>
+                    <input type="text" name="assunto" placeholder="Assunto" required 
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    <textarea name="mensagem" placeholder="Sua Mensagem" rows="4" required 
+                              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"></textarea>
+                    <input type="hidden" name="data_envio" id="dataEnvio">
+                    <input type="hidden" name="projeto" value="BARCODER'S">
+                    <button type="submit" id="submitBtn"
+                            class="w-full bg-indigo-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-indigo-700 transition-colors">
+                        Enviar Mensagem
+                    </button>
+                </form>
+                <div id="successMessage" class="hidden mt-4 p-4 bg-green-100 text-green-700 rounded-lg">
+                    Mensagem enviada com sucesso! Entraremos em contato em breve.
+                </div>
+                <div id="errorMessage" class="hidden mt-4 p-4 bg-red-100 text-red-700 rounded-lg">
+                    Erro ao enviar mensagem. Tente novamente.
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-100 py-8">
+        <div class="container mx-auto px-6 text-center">
+            <div class="text-gray-600">
+                © 2025 BARCODER'S - Sistema de Gestão de Estoque para Amemiya
+            </div>
+        </div>
+    </footer>
+    <!-- AVISO DE DEV LOCAL (opcional, pode remover se não quiser) -->
+    <div id="devWarning" class="fixed top-0 left-0 w-full bg-yellow-200 text-yellow-900 text-center py-2 z-50 hidden">
+        Ambiente de desenvolvimento: endpoints de API simulados.
+    </div>
+    <script>
+    // MOCK DE ENDPOINTS PARA QUALQUER AMBIENTE (local e produção)
+    (function() {
+        document.getElementById('devWarning').classList.remove('hidden');
+        const originalFetch = window.fetch;
+        window.fetch = async function(resource, options) {
+            // Mock para /api/contact
+            if (typeof resource === 'string' && resource.endsWith('/api/contact')) {
+                return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+            }
+            // Mock para /api/estatisticas ou /estatisticas
+            if (typeof resource === 'string' && (resource.endsWith('/api/estatisticas') || resource.endsWith('/estatisticas'))) {
+                return new Response(JSON.stringify([
+                    { label: "Produtos", value: 120 },
+                    { label: "Movimentações", value: 350 },
+                    { label: "Alertas", value: 5 },
+                    { label: "Usuários", value: 8 }
+                ]), { status: 200, headers: { 'Content-Type': 'application/json' } });
+            }
+            // Mock para /estoque
+            if (typeof resource === 'string' && resource.endsWith('/estoque')) {
+                return new Response(JSON.stringify([
+                    { id: 1, nome: "Matéria-Prima A", quantidade: 50 },
+                    { id: 2, nome: "Matéria-Prima B", quantidade: 30 }
+                ]), { status: 200, headers: { 'Content-Type': 'application/json' } });
+            }
+            // Fallback para fetch normal
+            return originalFetch.apply(this, arguments);
+        };
+    })();
+    </script>
+    <script>
+    document.addEventListener('DOMContentLoaded', async function() {
+        // Contato
+        const form = document.getElementById('contactForm');
+        if (form) {
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const submitBtn = document.getElementById('submitBtn');
+                const successMsg = document.getElementById('successMessage');
+                const errorMsg = document.getElementById('errorMessage');
+                document.getElementById('dataEnvio').value = new Date().toISOString();
+                submitBtn.textContent = 'Enviando...';
+                submitBtn.disabled = true;
+                successMsg.classList.add('hidden');
+                errorMsg.classList.add('hidden');
+                try {
+                    const formData = new FormData(form);
+                    // Detecta ambiente local ou produção
+                    const apiUrl = window.location.hostname === 'localhost' ?
+                        'http://localhost:3000/api/contact' : '/api/contact';
+                    // Em local, o fetch será interceptado pelo mock acima
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    if (response.ok) {
+                        successMsg.classList.remove('hidden');
+                        form.reset();
+                    } else {
+                        const errorText = await response.text();
+                        errorMsg.textContent = "Erro ao enviar mensagem: " + errorText;
+                        errorMsg.classList.remove('hidden');
+                    }
+                } catch (error) {
+                    errorMsg.textContent = "Erro ao enviar mensagem: " + (error.message || error);
+                    errorMsg.classList.remove('hidden');
+                } finally {
+                    submitBtn.textContent = 'Enviar Mensagem';
+                    submitBtn.disabled = false;
+                }
+            });
+        }
+    });
+    </script>
+</body>
+</html>
