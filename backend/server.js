@@ -12,7 +12,6 @@ const app = express();
 const port = process.env.PORT || 3000;
 const upload = multer();
 
-
 // Libera CORS apenas para seu domínio
 app.use(cors({ origin: 'https://barcoders.azurewebsites.net' }));
 app.use(express.json());
@@ -24,9 +23,18 @@ app.use(express.urlencoded({ extended: true }));
 // Se o build do frontend está em 'dist', use '../dist'.
 app.use(express.static(path.join(__dirname, '..')));
 
-// ...rotas removidas...
-// Endpoint de contato: salva mensagem no banco
+// Rota para listar todos os contatos cadastrados
+app.get('/api/contatos', (req, res) => {
+  connection.query('SELECT * FROM contato ORDER BY data_envio DESC', (err, results) => {
+    if (err) {
+      console.error('Erro ao buscar contatos:', err);
+      return res.status(500).json({ error: 'Erro ao buscar contatos' });
+    }
+    res.json(results);
+  });
+});
 
+// Endpoint de contato: salva mensagem no banco
 app.post('/api/contact', upload.none(), (req, res) => {
   const { nome, email, assunto, mensagem, projeto } = req.body;
   const data_envio = new Date();
