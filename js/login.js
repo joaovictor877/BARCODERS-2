@@ -1,4 +1,3 @@
-// Sempre usa o backend online
 var API_ENDPOINT = 'https://barcoders.azurewebsites.net';
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -22,7 +21,21 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (loginForm) {
         loginForm.addEventListener('submit', async (e) => {
+            
+            // Clear previous error messages
+            loginErrorMessage.classList.add('hidden');
+            
             e.preventDefault();
+            
+            // Validate form data before sending
+            const email = formData.get('email');
+            const password = formData.get('password');
+            
+            if (!email || !password) {
+                loginErrorMessage.textContent = 'Por favor, preencha todos os campos.';
+                loginErrorMessage.classList.remove('hidden');
+                return;
+            }
             const formData = new FormData(loginForm);
             const endpoint = `${API_ENDPOINT}/api/login`; 
 
