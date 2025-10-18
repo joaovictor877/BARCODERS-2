@@ -1,4 +1,6 @@
-var API_ENDPOINT = 'https://barcoders.azurewebsites.net';
+if (typeof API_ENDPOINT === 'undefined') {
+    var API_ENDPOINT = 'https://barcoders.azurewebsites.net';
+}
 
 document.addEventListener('DOMContentLoaded', function () {
     const loginBtn = document.getElementById('loginBtn');
