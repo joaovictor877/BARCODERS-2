@@ -7,7 +7,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Movimentação de Material</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <!-- 1. TROCA DA BIBLIOTECA DE LEITURA -->
+    <script type="text/javascript" src="https://unpkg.com/@zxing/library@latest"></script>
 </head>
 <body class="bg-gray-100">
     <div class="container mx-auto px-6 py-12">
@@ -26,17 +27,17 @@
                                placeholder="Digite ou escaneie o código...">
                     </div>
 
-                    <!-- Seção da Câmera -->
+                    <!-- 2. ESTRUTURA PARA A CÂMERA -->
                     <div class="border-t border-dashed pt-4">
-                        <div id="camera-section" class="w-full">
-                            <div id="reader" class="w-full"></div>
-                            <button type="button" id="startCameraBtn" class="w-full mt-2 bg-gray-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-gray-700 transition-colors">
-                                Escanear com a Câmera
-                            </button>
-                             <button type="button" id="stopCameraBtn" class="w-full mt-2 bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors hidden">
-                                Parar Câmera
-                            </button>
+                        <div id="scanner-container" class="w-full border rounded-lg overflow-hidden hidden bg-black">
+                            <video id="video-preview" class="w-full h-auto"></video>
                         </div>
+                        <div id="camera-controls" class="flex items-center gap-2 mt-2 hidden">
+                            <label for="videoSource" class="text-sm">Câmera:</label>
+                            <select id="videoSource" class="flex-grow p-1 border rounded text-sm"></select>
+                        </div>
+                        <button type="button" id="startCameraBtn" class="w-full mt-2 bg-gray-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-gray-700">Escanear com a Câmera</button>
+                        <button type="button" id="stopCameraBtn" class="w-full mt-2 bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 hidden">Parar Câmera</button>
                     </div>
 
                     <div>
@@ -53,10 +54,7 @@
                     </div>
 
                     <div class="flex justify-end pt-4 border-t">
-                        <button type="submit" id="registrarBtn" 
-                                class="w-full sm:w-auto bg-indigo-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:bg-gray-400">
-                            Registrar Movimentação
-                        </button>
+                        <button type="submit" id="registrarBtn" class="w-full sm:w-auto bg-indigo-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-indigo-700 disabled:bg-gray-400">Registrar Movimentação</button>
                     </div>
                 </div>
             </form>

@@ -2,58 +2,50 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- SELEÇÃO DOS ELEMENTOS DO DOM ---
-
-    // Elementos da seção de busca
     const codigoLoteInput = document.getElementById('codigoLote');
     const buscarBtn = document.getElementById('buscarBtn');
-    
-    // Elementos do formulário de identificação (inicialmente oculto)
     const identificacaoForm = document.getElementById('identificacaoForm');
     const salvarBtn = document.getElementById('salvarBtn');
-    const novoTipoMPSelect = document.getElementById('novoTipoMP');
-
-    // Elementos para exibir os detalhes do lote encontrado
     const loteBarcode = document.getElementById('lote-barcode');
     const loteFornecedor = document.getElementById('lote-fornecedor');
     const loteQuantidade = document.getElementById('lote-quantidade');
     const loteStatus = document.getElementById('lote-status');
-
-    // Elementos para mensagens de feedback e controle da câmera
     const successMessage = document.getElementById('successMessage');
     const errorMessage = document.getElementById('errorMessage');
+
+    // Elementos da Câmera
     const startCameraBtn = document.getElementById('startCameraBtn');
     const stopCameraBtn = document.getElementById('stopCameraBtn');
-    const readerDiv = document.getElementById('reader');
-    const html5QrCode = new Html5Qrcode("reader");
+    const scannerContainer = document.getElementById('scanner-container');
+    const cameraControls = document.getElementById('camera-controls');
+    const videoSelect = document.getElementById('videoSource');
+
+    // Instância do leitor de código de barras (será inicializada ao clicar)
+    let codeReader = null;
+    let selectedDeviceId = null;
 
     // --- FUNÇÕES AUXILIARES ---
 
-    // Esconde todas as mensagens de feedback
     const hideMessages = () => {
         successMessage.classList.add('hidden');
         errorMessage.classList.add('hidden');
     };
 
-    // Reseta a interface para o estado inicial, pronta para uma nova busca
     const resetInterface = () => {
-        identificacaoForm.classList.add('hidden'); // Esconde a seção de detalhes
-        codigoLoteInput.value = ''; // Limpa o campo de busca
-        salvarBtn.disabled = true; // Desabilita o botão de salvar
-        codigoLoteInput.focus(); // Coloca o foco de volta no campo de busca
+        identificacaoForm.classList.add('hidden');
+        codigoLoteInput.value = '';
+        salvarBtn.disabled = true;
+        codigoLoteInput.focus();
     };
 
-    // --- FUNÇÕES PRINCIPAIS ---
+    // --- LÓGICA PRINCIPAL ---
 
-    // Função assíncrona para buscar os detalhes de um lote na API
     const buscarLote = async () => {
         const barcode = codigoLoteInput.value.trim();
-        if (!barcode) {
-            alert('Por favor, digite ou escaneie um código de lote.');
-            return;
-        }
-
+        if (!barcode) return; // Não faz nada se o campo estiver vazio
+        
         hideMessages();
-        identificacaoForm.classList.add('hidden'); // Garante que o form antigo seja escondido
+        identificacaoForm.classList.add('hidden');
 
         try {
             const response = await fetch(`/api/lote/${barcode}`);
@@ -65,78 +57,122 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // Se encontrou o lote, preenche os detalhes na tela
             const lote = result.lote;
             loteBarcode.textContent = lote.BarCode;
             loteFornecedor.textContent = lote.FornecedorNome;
             loteQuantidade.textContent = lote.Quantidade;
             loteStatus.textContent = lote.fk_Tipos_MP_TipoMP;
-            
-            // Mostra a seção de identificação que estava oculta
             identificacaoForm.classList.remove('hidden');
 
-            // Validação de negócio: verifica se o lote pode ser identificado
+            // Valida se o lote pode ser identificado
             if (lote.fk_Tipos_MP_TipoMP === 'Aguardando Identificação') {
-                // Lote válido para identificação
-                loteStatus.className = 'font-bold text-yellow-600'; // Estilo de "Atenção"
-                salvarBtn.disabled = false; // Habilita o botão para salvar
+                loteStatus.className = 'font-bold text-yellow-600';
+                salvarBtn.disabled = false;
             } else {
-                // Lote já foi identificado anteriormente
-                loteStatus.className = 'font-bold text-green-600'; // Estilo de "OK"
-                errorMessage.textContent = 'Este lote já foi identificado anteriormente.';
+                loteStatus.className = 'font-bold text-green-600';
+                errorMessage.textContent = 'Este lote já foi identificado.';
                 errorMessage.classList.remove('hidden');
-                salvarBtn.disabled = true; // Desabilita o botão para prevenir re-identificação
+                salvarBtn.disabled = true;
             }
-
         } catch (error) {
             console.error("Erro na busca do lote:", error);
-            errorMessage.textContent = 'Erro de conexão ao buscar o lote. Tente novamente.';
+            errorMessage.textContent = 'Erro de conexão ao buscar lote.';
             errorMessage.classList.remove('hidden');
         }
     };
 
     // --- LÓGICA DA CÂMERA ---
 
-    // Função chamada quando a câmera lê um código com sucesso
-    const onScanSuccess = (decodedText, decodedResult) => {
+    const onScanSuccess = (decodedText) => {
         codigoLoteInput.value = decodedText;
-        stopCamera();
-        buscarLote(); // Após escanear, busca automaticamente os detalhes do lote
+        stopScanner();
+        buscarLote(); // Busca automaticamente após escanear
     };
 
-    // Função para parar a câmera e resetar os botões
-    const stopCamera = () => {
-        html5QrCode.stop().then(() => {
-            readerDiv.style.display = 'none';
-            stopCameraBtn.classList.add('hidden');
-            startCameraBtn.classList.remove('hidden');
-        }).catch(err => {
-            // Ignora o erro se a câmera já estava parada
+    const startScanner = () => {
+        if (!selectedDeviceId) return;
+        codeReader.decodeFromVideoDevice(selectedDeviceId, 'video-preview', (result, err) => {
+            if (result) {
+                onScanSuccess(result.getText());
+            }
+            if (err && !(err instanceof ZXing.NotFoundException)) {
+                console.error('Erro de decodificação:', err);
+            }
         });
     };
+    
+    const stopScanner = () => {
+        if (codeReader) {
+            codeReader.reset(); // Libera a câmera e para o processo de scan
+        }
+        scannerContainer.classList.add('hidden');
+        cameraControls.classList.add('hidden');
+        stopCameraBtn.classList.add('hidden');
+        startCameraBtn.classList.remove('hidden');
+    };
 
-    // --- EVENT LISTENERS ---
+    startCameraBtn.addEventListener('click', () => {
+        hideMessages();
+        resetInterface();
+        codeReader = new ZXing.BrowserMultiFormatReader(); // Cria uma nova instância limpa
 
-    // Gatilho para buscar o lote ao clicar no botão
+        // Mostra os controles da câmera
+        scannerContainer.classList.remove('hidden');
+        cameraControls.classList.remove('hidden');
+        startCameraBtn.classList.add('hidden');
+        stopCameraBtn.classList.remove('hidden');
+
+        // Lista as câmeras disponíveis
+        codeReader.listVideoInputDevices().then((devices) => {
+            if (devices.length > 0) {
+                videoSelect.innerHTML = ''; // Limpa a lista
+                devices.forEach(d => {
+                    const opt = document.createElement('option');
+                    opt.value = d.deviceId;
+                    opt.text = d.label || `Câmera ${videoSelect.length + 1}`;
+                    videoSelect.appendChild(opt);
+                });
+                selectedDeviceId = devices[0].deviceId;
+                startScanner();
+            } else {
+                errorMessage.textContent = 'Nenhuma câmera encontrada.';
+                errorMessage.classList.remove('hidden');
+            }
+        }).catch(err => {
+            errorMessage.textContent = 'Erro ao acessar a câmera. Verifique as permissões.';
+            errorMessage.classList.remove('hidden');
+        });
+    });
+
+    stopCameraBtn.addEventListener('click', stopScanner);
+
+    videoSelect.addEventListener('change', () => {
+        selectedDeviceId = videoSelect.value;
+        if (codeReader) {
+            codeReader.reset();
+        }
+        startScanner();
+    });
+
+    // --- EVENT LISTENERS DO FORMULÁRIO ---
+    
     buscarBtn.addEventListener('click', buscarLote);
-
-    // Gatilho para buscar o lote ao pressionar "Enter" no campo de texto
+    
     codigoLoteInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
-            e.preventDefault(); // Impede o envio do formulário
+            e.preventDefault();
             buscarLote();
         }
     });
-
-    // Gatilho para salvar a identificação ao enviar o formulário
+    
     identificacaoForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        salvarBtn.disabled = true; // Previne cliques múltiplos
+        salvarBtn.disabled = true;
         hideMessages();
 
         const data = {
             codigoLote: loteBarcode.textContent,
-            novoTipoMP: novoTipoMPSelect.value
+            novoTipoMP: document.getElementById('novoTipoMP').value
         };
 
         try {
@@ -150,39 +186,17 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok) {
                 successMessage.textContent = result.message;
                 successMessage.classList.remove('hidden');
-                resetInterface(); // Limpa a tela para a próxima identificação
+                resetInterface();
             } else {
                 errorMessage.textContent = result.message;
                 errorMessage.classList.remove('hidden');
-                salvarBtn.disabled = false; // Reabilita o botão em caso de erro
+                salvarBtn.disabled = false;
             }
         } catch (error) {
             console.error("Erro ao salvar identificação:", error);
-            errorMessage.textContent = 'Erro de conexão ao salvar. Tente novamente.';
+            errorMessage.textContent = 'Erro de conexão ao salvar.';
             errorMessage.classList.remove('hidden');
             salvarBtn.disabled = false;
         }
     });
-
-    // Gatilho para iniciar a câmera
-    startCameraBtn.addEventListener('click', () => {
-        hideMessages();
-        readerDiv.style.display = 'block';
-        startCameraBtn.classList.add('hidden');
-        stopCameraBtn.classList.remove('hidden');
-
-        html5QrCode.start(
-            { facingMode: "environment" }, // Prioriza a câmera traseira
-            { fps: 10, qrbox: { width: 250, height: 150 } },
-            onScanSuccess,
-            () => {} // Ignora falhas de leitura contínuas
-        ).catch(err => {
-            errorMessage.textContent = "Não foi possível iniciar a câmera. Verifique as permissões.";
-            errorMessage.classList.remove('hidden');
-            stopCamera();
-        });
-    });
-
-    // Gatilho para parar a câmera manualmente
-    stopCameraBtn.addEventListener('click', stopCamera);
 });
