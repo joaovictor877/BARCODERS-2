@@ -1,6 +1,4 @@
-// js/login.js
-
-// Defina o endpoint do backend para produção
+// Sempre usa o backend online
 var API_ENDPOINT = 'https://barcoders.azurewebsites.net';
 
 document.addEventListener('DOMContentLoaded', function () {
