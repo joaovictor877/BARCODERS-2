@@ -1,6 +1,6 @@
 if (typeof API_ENDPOINT === 'undefined') {
     var API_ENDPOINT = window.location.hostname === 'localhost'
-        ? 'http://localhost:3000'
+        ? 'http://localhost:8080'
         : 'https://barcoders.azurewebsites.net';
 }
 // var API_ENDPOINT = 'https://barcoders.azurewebsites.net'; --- IGNORE ---
