@@ -1,5 +1,3 @@
-// js/login.js
-
 document.addEventListener('DOMContentLoaded', function () {
     const loginBtn = document.getElementById('loginBtn');
     const loginModal = document.getElementById('loginModal');
@@ -23,7 +21,7 @@ document.addEventListener('DOMContentLoaded', function () {
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const formData = new FormData(loginForm);
-            const endpoint = `${API_ENDPOINT}/api/login`; 
+            const endpoint = `${API_ENDPOINT}/api/login`; // Confirma que está usando o endpoint correto
 
             try {
                 const response = await fetch(endpoint, {
