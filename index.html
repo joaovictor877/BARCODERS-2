@@ -267,15 +267,6 @@
             if (typeof resource === 'string' && resource.endsWith('/api/contact')) {
                 return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
             }
-            // Mock para /api/estatisticas ou /estatisticas
-            if (typeof resource === 'string' && (resource.endsWith('/api/estatisticas') || resource.endsWith('/estatisticas'))) {
-                return new Response(JSON.stringify([
-                    { label: "Produtos", value: 120 },
-                    { label: "Movimentações", value: 350 },
-                    { label: "Alertas", value: 5 },
-                    { label: "Usuários", value: 8 }
-                ]), { status: 200, headers: { 'Content-Type': 'application/json' } });
-            }
             // Mock para /estoque
             if (typeof resource === 'string' && resource.endsWith('/estoque')) {
                 return new Response(JSON.stringify([

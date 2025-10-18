@@ -17,20 +17,20 @@ function setupSmoothScroll() {
 
 document.addEventListener('DOMContentLoaded', setupSmoothScroll);
 
-// Estatísticas dinâmicas (simulação de dados vindos do banco)
+
+// Estatísticas reais do backend
 async function fetchStats() {
-    // Busca os dados de estoque do backend
     try {
-        const response = await fetch('/estoque');
-        const estoque = await response.json();
-        // Exibe cada lote de matéria-prima como estatística
-        return estoque.slice(0, 4).map(item => ({
-            value: item.BarCode,
-            label: `Tipo: ${item.fk_Tipos_MP_TipoMP} | Qtd: ${item.Quantidade}`
-        }));
+        // Detecta ambiente local ou produção
+        const apiUrl = window.location.hostname === 'localhost'
+            ? 'http://localhost:3000/api/estatisticas'
+            : '/api/estatisticas';
+        const response = await fetch(apiUrl);
+        if (!response.ok) throw new Error('Erro ao buscar estatísticas');
+        const stats = await response.json();
+        return stats;
     } catch (error) {
-        // Se falhar, mostra mensagem de erro
-        return [{ value: 'Erro', label: 'Não foi possível carregar os dados do banco.' }];
+        return [{ value: 'Erro', label: 'Não foi possível carregar estatísticas.' }];
     }
 }
 
