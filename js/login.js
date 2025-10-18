@@ -1,7 +1,9 @@
 if (typeof API_ENDPOINT === 'undefined') {
-    var API_ENDPOINT = 'https://barcoders.azurewebsites.net';
+    var API_ENDPOINT = window.location.hostname === 'localhost'
+        ? 'http://localhost:3000'
+        : 'https://barcoders.azurewebsites.net';
 }
-
+// var API_ENDPOINT = 'https://barcoders.azurewebsites.net'; --- IGNORE ---
 document.addEventListener('DOMContentLoaded', function () {
     const loginBtn = document.getElementById('loginBtn');
     const loginModal = document.getElementById('loginModal');
