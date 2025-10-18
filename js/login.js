@@ -1,3 +1,8 @@
+// js/login.js
+
+// Defina o endpoint da API (ajuste conforme ambiente)
+const API_ENDPOINT = window.location.origin; // ou 'https://barcoders.azurewebsites.net' para produção
+
 document.addEventListener('DOMContentLoaded', function () {
     const loginBtn = document.getElementById('loginBtn');
     const loginModal = document.getElementById('loginModal');
