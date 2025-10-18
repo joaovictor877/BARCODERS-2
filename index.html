@@ -263,10 +263,6 @@
     (function() {
         const originalFetch = window.fetch;
         window.fetch = async function(resource, options) {
-            // Mock para /api/contact
-            if (typeof resource === 'string' && resource.endsWith('/api/contact')) {
-                return new Response(JSON.stringify({ ok: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
-            }
             // Mock para /estoque
             if (typeof resource === 'string' && resource.endsWith('/estoque')) {
                 return new Response(JSON.stringify([
