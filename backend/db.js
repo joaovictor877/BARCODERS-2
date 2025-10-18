@@ -5,11 +5,11 @@ const mysql = require('mysql2');
 
 // Cria a conexão usando variáveis de ambiente ou valores padrão
 const connection = mysql.createConnection({
-  host: process.env.DB_HOST || 'barcodersdb.mysql.database.azure.com',
-  user: process.env.DB_USER || 'agente',
-  password: process.env.DB_PASS || 'Agentedeestoque',
+  host: process.env.DB_HOST || 'yamabiko.proxy.rlwy.net',
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASS || 'QojBQnVzgDsClaQEbloVVSWpfvzQxaYY',
   database: process.env.DB_NAME || 'estoque',
-  port: 3306,
+  port: 30801,
   ssl: { rejectUnauthorized: false }
 });
 
