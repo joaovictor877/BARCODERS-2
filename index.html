@@ -362,7 +362,7 @@
           const password = document.getElementById('password').value;
           const endpoint = typeof API_ENDPOINT !== 'undefined' ? `${API_ENDPOINT}/api/login` : '/api/login';
           try {
-            const response = await fetch(endpoint, {
+            const response = await fetch(API_ENDPOINT, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ email, password })
