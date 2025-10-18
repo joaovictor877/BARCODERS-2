@@ -3,18 +3,16 @@
 <head>
     <script src="js/config.js"></script>
     <script src="js/main.js"></script>
-    <script src="js/login.js"></script>
+    <script src="login/login.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BARCODER'S - Gestão de Estoque Amemiya</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="css/style.css">
     <link rel="icon" href="assets/img/logo_amemiya.png">
-
 </head>
-<!-- Header -->
-<body class="bg-gray-50">
-    <body class="bg-gray-50 smooth-scroll">
+<body class="bg-gray-50 smooth-scroll">
+  <!-- Header -->
   <header class="bg-white shadow-sm border-b sticky top-0 z-50">
    <div class="container mx-auto px-6 py-4">
     <div class="flex items-center justify-between">
@@ -312,34 +310,74 @@
         </div>
     </footer>
 
-    <script>
-      document.addEventListener('DOMContentLoaded', function () {
-        const form = document.getElementById('contactForm');
-        if (form) {
-          form.addEventListener('submit', async function (e) {
-            e.preventDefault();
-            const formData = new FormData(form);
-            const endpoint = `${API_ENDPOINT}/api/contact`;
-            try {
-              const response = await fetch(endpoint, {
-                method: 'POST',
-                body: formData
-              });
-              if (response.ok) {
-                document.getElementById('successMessage').classList.remove('hidden');
-                document.getElementById('errorMessage').classList.add('hidden');
-                form.reset();
-              } else {
-                document.getElementById('successMessage').classList.add('hidden');
-                document.getElementById('errorMessage').classList.remove('hidden');
-              }
-            } catch {
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      // Contato
+      const form = document.getElementById('contactForm');
+      if (form) {
+        form.addEventListener('submit', async function (e) {
+          e.preventDefault();
+          const formData = new FormData(form);
+          const endpoint = typeof API_ENDPOINT !== 'undefined' ? `${API_ENDPOINT}/api/contact` : '/api/contact';
+          try {
+            const response = await fetch(endpoint, {
+              method: 'POST',
+              body: formData
+            });
+            if (response.ok) {
+              document.getElementById('successMessage').classList.remove('hidden');
+              document.getElementById('errorMessage').classList.add('hidden');
+              form.reset();
+            } else {
               document.getElementById('successMessage').classList.add('hidden');
               document.getElementById('errorMessage').classList.remove('hidden');
             }
-          });
-        }
-      });
-    </script>
+          } catch {
+            document.getElementById('successMessage').classList.add('hidden');
+            document.getElementById('errorMessage').classList.remove('hidden');
+          }
+        });
+      }
+
+      // Login Modal abrir/fechar
+      window.abrirLogin = function() {
+        document.getElementById('loginModal').classList.remove('hidden');
+        document.getElementById('loginErrorMessage').classList.add('hidden');
+      };
+      const closeModalBtn = document.getElementById('closeModal');
+      if (closeModalBtn) {
+        closeModalBtn.onclick = function() {
+          document.getElementById('loginModal').classList.add('hidden');
+        };
+      }
+
+      // Login form handler
+      const loginForm = document.getElementById('loginForm');
+      if (loginForm) {
+        loginForm.addEventListener('submit', async function (e) {
+          e.preventDefault();
+          const email = document.getElementById('email').value;
+          const password = document.getElementById('password').value;
+          const endpoint = typeof API_ENDPOINT !== 'undefined' ? `${API_ENDPOINT}/api/login` : '/api/login';
+          try {
+            const response = await fetch(endpoint, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email, password })
+            });
+            if (response.ok) {
+              document.getElementById('loginErrorMessage').classList.add('hidden');
+              document.getElementById('loginModal').classList.add('hidden');
+              window.location.href = '/admin'; // Redireciona para a tela de admin
+            } else {
+              document.getElementById('loginErrorMessage').classList.remove('hidden');
+            }
+          } catch {
+            document.getElementById('loginErrorMessage').classList.remove('hidden');
+          }
+        });
+      }
+    });
+  </script>
 </body>
 </html>
