@@ -1,7 +1,9 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+    <script src="js/config.js"></script>
     <script src="js/main.js"></script>
+    <script src="js/login.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BARCODER'S - Gestão de Estoque Amemiya</title>
@@ -23,12 +25,12 @@
                         <p class="text-gray-500 text-sm">Sistema de Gestão de Estoque</p>
                     </div>
                 </div>
-                <nav class="hidden md:flex space-x-8 items-center">
+                <nav class="hidden md:flex space-x-8">
                     <a data-scroll="projeto" class="text-gray-600 hover:text-indigo-600 transition-colors">Projeto</a>
                     <a data-scroll="funcionalidades" class="text-gray-600 hover:text-indigo-600 transition-colors">Funcionalidades</a>
                     <a data-scroll="tecnologias" class="text-gray-600 hover:text-indigo-600 transition-colors">Tecnologias</a>
                     <a data-scroll="contato" class="text-gray-600 hover:text-indigo-600 transition-colors">Contato</a>
-                    <a href="/admin/index.html" class="ml-6 bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors shadow">Login</a>
+                    <button id="loginBtn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors">Login</button>
                 </nav>
             </div>
         </div>
@@ -203,12 +205,32 @@
         </div>
     </section>
 
-    <!-- Estatísticas -->
+<!-- Estatísticas -->
 <section class="py-16 bg-indigo-600">
     <div class="container mx-auto px-6">
-        <h2 class="text-2xl font-bold text-white text-center mb-12">Resultados do Projeto</h2>
-        <div id="statsGrid" class="grid md:grid-cols-4 gap-8 text-center">
-            <!-- Os dados serão inseridos via JavaScript -->
+        <h2 class="text-2xl font-bold text-white text-center mb-12">Resultados Esperados com a Implantação</h2>
+        <div id="statsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 text-center">
+            
+            <div class="bg-white bg-opacity-10 rounded-lg p-6">
+                <div class="text-3xl font-bold text-white mb-2">+50%</div>
+                <div class="text-indigo-200">Agilidade no Recebimento</div>
+            </div>
+
+            <div class="bg-white bg-opacity-10 rounded-lg p-6">
+                <div class="text-3xl font-bold text-white mb-2">-30%</div>
+                <div class="text-indigo-200">Redução de Perdas</div>
+            </div>
+            
+            <div class="bg-white bg-opacity-10 rounded-lg p-6">
+                <div class="text-3xl font-bold text-white mb-2">99%</div>
+                <div class="text-indigo-200">Acuracidade do Estoque</div>
+            </div>
+
+            <div class="bg-white bg-opacity-10 rounded-lg p-6">
+                <div class="text-3xl font-bold text-white mb-2">100%</div>
+                <div class="text-indigo-200">Rastreabilidade de Lotes</div>
+            </div>
+
         </div>
     </div>
 </section>
@@ -251,6 +273,35 @@
     </div>
 </section>
 
+    <!-- Login Modal -->
+    <div id="loginModal" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center hidden">
+        <div class="bg-white rounded-lg p-8 max-w-sm w-full">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Login</h2>
+                <button id="closeModal" class="text-gray-500 hover:text-gray-700">&times;</button>
+            </div>
+            <form id="loginForm">
+                <div class="mb-4">
+                    <label for="email" class="block text-gray-700 mb-2">Email</label>
+                    <input type="email" id="email" name="email" required
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                </div>
+                <div class="mb-6">
+                    <label for="password" class="block text-gray-700 mb-2">Senha</label>
+                    <input type="password" id="password" name="password" required
+                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                </div>
+                <button type="submit"
+                        class="w-full bg-indigo-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-indigo-700 transition-colors">
+                    Entrar
+                </button>
+            </form>
+            <div id="loginErrorMessage" class="hidden mt-4 p-4 bg-red-100 text-red-700 rounded-lg">
+                Email ou senha inválidos.
+            </div>
+        </div>
+    </div>
+
     <!-- Footer -->
     <footer class="bg-gray-100 py-8">
         <div class="container mx-auto px-6 text-center">
@@ -259,66 +310,35 @@
             </div>
         </div>
     </footer>
+
     <script>
-    // MOCK DE ENDPOINTS PARA QUALQUER AMBIENTE (local e produção)
-    (function() {
-        const originalFetch = window.fetch;
-        window.fetch = async function(resource, options) {
-            // Mock para /estoque
-            if (typeof resource === 'string' && resource.endsWith('/estoque')) {
-                return new Response(JSON.stringify([
-                    { id: 1, nome: "Matéria-Prima A", quantidade: 50 },
-                    { id: 2, nome: "Matéria-Prima B", quantidade: 30 }
-                ]), { status: 200, headers: { 'Content-Type': 'application/json' } });
-            }
-            // Fallback para fetch normal
-            return originalFetch.apply(this, arguments);
-        };
-    })();
-    </script>
-    <script>
-    document.addEventListener('DOMContentLoaded', async function() {
-        // Contato
+      document.addEventListener('DOMContentLoaded', function () {
         const form = document.getElementById('contactForm');
         if (form) {
-            form.addEventListener('submit', async function(e) {
-                e.preventDefault();
-                const submitBtn = document.getElementById('submitBtn');
-                const successMsg = document.getElementById('successMessage');
-                const errorMsg = document.getElementById('errorMessage');
-                document.getElementById('dataEnvio').value = new Date().toISOString();
-                submitBtn.textContent = 'Enviando...';
-                submitBtn.disabled = true;
-                successMsg.classList.add('hidden');
-                errorMsg.classList.add('hidden');
-                try {
-                    const formData = new FormData(form);
-                    // Detecta ambiente local ou produção
-                    const apiUrl = window.location.hostname === 'localhost' ?
-                        'http://localhost:3000/api/contact' : '/api/contact';
-                    // Em local, o fetch será interceptado pelo mock acima
-                    const response = await fetch(apiUrl, {
-                        method: 'POST',
-                        body: formData
-                    });
-                    if (response.ok) {
-                        successMsg.classList.remove('hidden');
-                        form.reset();
-                    } else {
-                        const errorText = await response.text();
-                        errorMsg.textContent = "Erro ao enviar mensagem: " + errorText;
-                        errorMsg.classList.remove('hidden');
-                    }
-                } catch (error) {
-                    errorMsg.textContent = "Erro ao enviar mensagem: " + (error.message || error);
-                    errorMsg.classList.remove('hidden');
-                } finally {
-                    submitBtn.textContent = 'Enviar Mensagem';
-                    submitBtn.disabled = false;
-                }
-            });
+          form.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const formData = new FormData(form);
+            const endpoint = `${API_ENDPOINT}/api/contact`;
+            try {
+              const response = await fetch(endpoint, {
+                method: 'POST',
+                body: formData
+              });
+              if (response.ok) {
+                document.getElementById('successMessage').classList.remove('hidden');
+                document.getElementById('errorMessage').classList.add('hidden');
+                form.reset();
+              } else {
+                document.getElementById('successMessage').classList.add('hidden');
+                document.getElementById('errorMessage').classList.remove('hidden');
+              }
+            } catch {
+              document.getElementById('successMessage').classList.add('hidden');
+              document.getElementById('errorMessage').classList.remove('hidden');
+            }
+          });
         }
-    });
+      });
     </script>
 </body>
 </html>

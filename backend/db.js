@@ -1,27 +1,16 @@
-// Este arquivo é responsável apenas pela conexão com o banco de dados MySQL.
-// Não configure CORS ou rotas aqui.
+import mysql from 'mysql2/promise';
 
-const mysql = require('mysql2');
-
-// Cria a conexão usando variáveis de ambiente ou valores padrão
-const connection = mysql.createConnection({
-  host: process.env.DB_HOST || 'yamabiko.proxy.rlwy.net',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASS || 'QojBQnVzgDsClaQEbloVVSWpfvzQxaYY',
-  database: process.env.DB_NAME || 'estoque',
-  port: 30801,
-  ssl: { rejectUnauthorized: false }
+// Cria um pool de conexões com o banco de dados
+const pool = mysql.createPool({
+  host: '127.0.0.1',
+  user: 'root',
+  password: '',
+  database: 'estoque',
+  port: 3306,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
 });
 
-// Testa a conexão ao iniciar o servidor
-connection.connect(err => {
-  if (err) {
-    console.error('Erro ao conectar ao MySQL:', err.message);
-    // Encerra o processo se não conseguir conectar
-    process.exit(1);
-  } else {
-    console.log('Conectado ao MySQL!');
-  }
-});
-
-module.exports = connection;
+// Exporta o pool para ser usado em outros arquivos
+export default pool;

@@ -1,0 +1,50 @@
+<!-- views/gestao.ejs -->
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Gestão</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Biblioteca de Gráficos Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-6 py-12">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-800">Dashboard de Gestão</h1>
+            <a href="/lobby" class="text-indigo-600 hover:text-indigo-800">&larr; Voltar ao Lobby</a>
+        </div>
+
+        <!-- KPIs -->
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white p-6 rounded-lg shadow-md"><h3 class="text-gray-500">Lotes em Estoque</h3><p id="kpi-total-stock" class="text-3xl font-bold">...</p></div>
+            <div class="bg-white p-6 rounded-lg shadow-md"><h3 class="text-gray-500">Aguardando Identificação</h3><p id="kpi-awaiting-id" class="text-3xl font-bold text-yellow-600">...</p></div>
+            <div class="bg-white p-6 rounded-lg shadow-md"><h3 class="text-gray-500">Movimentações Hoje</h3><p id="kpi-movements-today" class="text-3xl font-bold">...</p></div>
+            <div class="bg-white p-6 rounded-lg shadow-md"><h3 class="text-gray-500">Funcionários Cadastrados</h3><p id="kpi-total-employees" class="text-3xl font-bold">...</p></div>
+        </div>
+
+        <!-- Gráfico e Tabelas -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Gráfico de Estoque -->
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-xl font-semibold mb-4">Composição do Estoque</h3>
+                <canvas id="stockChart"></canvas>
+            </div>
+            <!-- Tabelas de Atividade Recente -->
+            <div class="space-y-8">
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-xl font-semibold mb-4">Últimas Entradas</h3>
+                    <table class="w-full text-sm text-left"><thead class="text-xs text-gray-700 uppercase bg-gray-50"><tr><th class="px-4 py-2">Data</th><th class="px-4 py-2">Lote</th><th class="px-4 py-2">Registrado por</th></tr></thead><tbody id="recent-entries-body"><tr><td colspan="3" class="text-center p-4">Carregando...</td></tr></tbody></table>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-xl font-semibold mb-4">Últimas Movimentações</h3>
+                    <table class="w-full text-sm text-left"><thead class="text-xs text-gray-700 uppercase bg-gray-50"><tr><th class="px-4 py-2">Data</th><th class="px-4 py-2">Lote</th><th class="px-4 py-2">Máquina</th></tr></thead><tbody id="recent-movements-body"><tr><td colspan="3" class="text-center p-4">Carregando...</td></tr></tbody></table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="/js/gestao.js"></script>
+</body>
+</html>

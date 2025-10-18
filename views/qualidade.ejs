@@ -1,0 +1,68 @@
+<!-- views/qualidade.ejs -->
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Identificação de Material</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-6 py-12">
+        <div class="flex items-center mb-8">
+             <a href="/lobby" class="text-indigo-600 hover:text-indigo-800 mr-4">&larr; Voltar ao Lobby</a>
+        </div>
+        <h1 class="text-4xl font-bold text-gray-800 mb-8">Identificação de Matéria-Prima (Qualidade)</h1>
+
+        <div class="bg-white p-8 rounded-lg shadow-md max-w-2xl mx-auto">
+            <!-- ETAPA 1: BUSCAR LOTE -->
+            <div id="busca-section">
+                <label for="codigoLote" class="block text-sm font-medium text-gray-700 mb-2">Escanear Código de Barras do Lote</label>
+                <div class="flex gap-2">
+                    <input type="text" id="codigoLote" autofocus class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" placeholder="Aguardando leitura do scanner...">
+                    <button type="button" id="buscarBtn" class="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700">Buscar</button>
+                </div>
+                <!-- Câmera -->
+                <div class="border-t border-dashed mt-4 pt-4">
+                    <div id="reader"></div>
+                    <button type="button" id="startCameraBtn" class="w-full mt-2 bg-gray-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-gray-700">Escanear com a Câmera</button>
+                    <button type="button" id="stopCameraBtn" class="w-full mt-2 bg-red-600 text-white px-4 py-2 rounded-lg hidden">Parar Câmera</button>
+                </div>
+            </div>
+
+            <!-- ETAPA 2: IDENTIFICAR LOTE -->
+            <form id="identificacaoForm" class="hidden mt-6 border-t pt-6">
+                <h2 class="text-xl font-semibold text-gray-700 mb-4">Detalhes do Lote</h2>
+                <div class="space-y-4 bg-gray-50 p-4 rounded-lg mb-6">
+                    <p><strong>Código:</strong> <span id="lote-barcode"></span></p>
+                    <p><strong>Fornecedor:</strong> <span id="lote-fornecedor"></span></p>
+                    <p><strong>Quantidade:</strong> <span id="lote-quantidade"></span></p>
+                    <p><strong>Status Atual:</strong> <span id="lote-status" class="font-bold"></span></p>
+                </div>
+
+                <div class="space-y-6">
+                    <div>
+                        <label for="novoTipoMP" class="block text-sm font-medium text-gray-700 mb-2">Identificar Como:</label>
+                        <select id="novoTipoMP" name="novoTipoMP" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                             <% tiposMP.forEach(t => { %>
+                                <option value="<%= t.TipoMP %>"><%= t.TipoMP %></option>
+                            <% }); %>
+                        </select>
+                    </div>
+                    <div class="flex justify-end">
+                        <button type="submit" id="salvarBtn" class="bg-indigo-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-indigo-700 disabled:bg-gray-400">
+                            Salvar Identificação
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            <div id="successMessage" class="hidden mt-4 p-4 bg-green-100 text-green-700 rounded-lg"></div>
+            <div id="errorMessage" class="hidden mt-4 p-4 bg-red-100 text-red-700 rounded-lg"></div>
+        </div>
+    </div>
+    <script src="/js/qualidade.js"></script>
+</body>
+</html>

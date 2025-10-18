@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel do Administrador</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/imask"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-6 py-12">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-800">Painel do Administrador</h1>
+            <a href="/lobby" class="text-indigo-600 hover:text-indigo-800">&larr; Voltar ao Lobby</a>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+            <!-- Coluna Esquerda: Cadastros -->
+            <div class="space-y-8">
+                <!-- Gerenciar Funcionários -->
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-xl font-semibold mb-4">Gerenciar Funcionários</h3>
+                    <button id="add-employee-btn" class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600">Adicionar Novo Funcionário</button>
+                    <!-- Tabela será preenchida via JS -->
+                </div>
+
+                <!-- Gerenciar Máquinas -->
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-xl font-semibold mb-4">Gerenciar Máquinas</h3>
+                    <button id="add-machine-btn" class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600">Adicionar Nova Máquina</button>
+                    <table class="w-full mt-4 text-sm"><thead class="text-xs text-gray-700 uppercase bg-gray-50"><tr><th class="px-4 py-2">Modelo</th><th class="px-4 py-2">Ações</th></tr></thead><tbody id="machines-table-body"></tbody></table>
+                </div>
+
+                 <!-- Gerenciar Tipos de Materiais -->
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <h3 class="text-xl font-semibold mb-4">Gerenciar Tipos de Materiais</h3>
+                    <button id="add-material-btn" class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600">Adicionar Novo Tipo</button>
+                    <table class="w-full mt-4 text-sm"><thead class="text-xs text-gray-700 uppercase bg-gray-50"><tr><th class="px-4 py-2">Tipo</th><th class="px-4 py-2">Ações</th></tr></thead><tbody id="materials-table-body"></tbody></table>
+                </div>
+            </div>
+
+            <!-- Coluna Direita: Compatibilidade -->
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-xl font-semibold mb-4">Gerenciar Compatibilidade (Material x Máquina)</h3>
+                <!-- Formulário para adicionar -->
+                <form id="compatibility-form" class="grid grid-cols-3 gap-4 items-end">
+                    <select id="comp-material-select" class="col-span-1 border rounded p-2"></select>
+                    <select id="comp-machine-select" class="col-span-1 border rounded p-2"></select>
+                    <button type="submit" class="col-span-1 bg-green-500 text-white py-2 rounded hover:bg-green-600">Adicionar</button>
+                </form>
+                <!-- Tabela de compatibilidades existentes -->
+                <div class="mt-6">
+                    <h4 class="font-semibold">Compatibilidades Atuais</h4>
+                    <table class="w-full mt-2 text-sm"><thead class="text-xs text-gray-700 uppercase bg-gray-50"><tr><th class="px-4 py-2">Material</th><th class="px-4 py-2">Máquina Compatível</th><th class="px-4 py-2">Ações</th></tr></thead><tbody id="compatibility-table-body"></tbody></table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modais (inicialmente ocultos) -->
+    <div id="admin-modal" class="fixed inset-0 bg-gray-800 bg-opacity-75 items-center justify-center hidden"><div id="modal-content" class="bg-white rounded-lg p-8 max-w-lg w-full"></div></div>
+
+    <script src="/js/admin.js"></script>
+</body>
+</html>
