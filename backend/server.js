@@ -10,9 +10,12 @@ const app = express();
 const port = process.env.PORT || 3000;
 const upload = multer();
 
+
 // Libera CORS apenas para seu domínio
 app.use(cors({ origin: 'https://barcoders.azurewebsites.net' }));
 app.use(express.json());
+// Permite receber dados de formulários HTML (application/x-www-form-urlencoded)
+app.use(express.urlencoded({ extended: true }));
 
 // Servir arquivos estáticos do frontend (ajuste o caminho se necessário)
 // Se o index.html está na raiz do projeto, use '..'.
