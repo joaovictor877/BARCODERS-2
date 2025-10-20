@@ -1,9 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <script>
-      var API_ENDPOINT = 'https://barcoders.azurewebsites.net';
-    </script>
     <script src="js/config.js"></script>
     <script src="js/main.js"></script>
     <script src="js/login.js"></script>
@@ -320,12 +317,16 @@
       if (form) {
         form.addEventListener('submit', async function (e) {
           e.preventDefault();
-          const formData = new FormData(form);
+          // Adiciona data_envio automática
+          document.getElementById('dataEnvio').value = new Date().toISOString();
+          // Envia como JSON
+          const formData = Object.fromEntries(new FormData(form));
           const endpoint = typeof API_ENDPOINT !== 'undefined' ? `${API_ENDPOINT}/api/contact` : '/api/contact';
           try {
             const response = await fetch(endpoint, {
               method: 'POST',
-              body: formData
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(formData)
             });
             if (response.ok) {
               document.getElementById('successMessage').classList.remove('hidden');

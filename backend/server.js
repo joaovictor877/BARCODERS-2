@@ -344,7 +344,6 @@ app.post('/api/admin/employees', requireLogin, requireAdmin, async (req, res) =>
     try {
         const sql = 'INSERT INTO Funcionarios (Nome, Email, CPF, Senha, Cargo, NivelAcesso) VALUES (?, ?, ?, ?, ?, ?)';
         await pool.query(sql, [nome, email, unmaskedCpf, senha, cargo, nivelAcesso]);
-        
         res.status(201).json({ success: true, message: 'Funcionário criado com sucesso!' });
     } catch (error) {
         console.error("Erro ao criar funcionário:", error);
@@ -628,8 +627,23 @@ app.use(express.static(path.join(projectRoot, 'public')));
 // Servir assets da página principal (como index.html, login.js, style.css)
 app.use(express.static(projectRoot));
 
+app.post('/api/contact', async (req, res) => {
+    const { nome, email, assunto, mensagem, data_envio, projeto } = req.body;
+    if (!nome || !email || !assunto || !mensagem) {
+        return res.status(400).json({ success: false, message: 'Campos obrigatórios faltando.' });
+    }
+    try {
+        await pool.query(
+            'INSERT INTO contatos (nome, email, assunto, mensagem, data_envio, projeto) VALUES (?, ?, ?, ?, ?, ?)',
+            [nome, email, assunto, mensagem, data_envio, projeto]
+        );
+        res.status(201).json({ success: true, message: 'Mensagem enviada com sucesso!' });
+    } catch (error) {
+        console.error("Erro ao enviar mensagem de contato:", error);
+        res.status(500).json({ success: false, message: 'Erro interno ao enviar mensagem.' });
+    }
+});
 
-// --- INICIALIZAÇÃO DO SERVIDOR ---
 app.listen(port, () => {
   console.log(`Servidor rodando em http://localhost:${port}`);
 });
