@@ -483,52 +483,80 @@ app.post('/api/identificar', requireLogin, async (req, res) => {
 app.get('/api/dashboard/gestao', requireLogin, async (req, res) => {
     try {
         // 1. KPIs (Key Performance Indicators) com aliases explícitos
-        const [kpiStock] = await pool.query("SELECT COUNT(*) as totalStock, SUM(CASE WHEN fk_Tipos_MP_TipoMP = 'Aguardando Identificação' THEN 1 ELSE 0 END) as awaitingId FROM Estoque_MP");
-        const [kpiMovimentos] = await pool.query("SELECT COUNT(*) as movementsToday, SUM(QuantidadeMovida) as unitsMovedToday FROM Registro_Movimentacao WHERE DATE(DataHoraMovimento) = CURDATE()");
-        const [kpiFuncionarios] = await pool.query("SELECT COUNT(*) as totalEmployees FROM Funcionarios");
-
-        // 2. Gráfico de Estoque por Tipo
-        const [stockByType] = await pool.query(`
-        SELECT 
-            fk_Tipos_MP_TipoMP as tipo, 
-            COUNT(*) as lotes,
-            SUM(Quantidade) as totalQuantidade
-        FROM Estoque_MP 
-        GROUP BY fk_Tipos_MP_TipoMP 
-        ORDER BY lotes DESC
-        `);
-
-        // 3. Gráfico de Consumo de Unidades por Máquina
-        const [consumptionByMachine] = await pool.query(`
-            SELECT m.Modelo, SUM(rm.QuantidadeMovida) as totalMovido
-            FROM Registro_Movimentacao rm
-            JOIN Maquinas m ON rm.fk_Maquina_Identificacao = m.Identificacao
-            GROUP BY m.Modelo
-            ORDER BY totalMovido DESC
-        `);
-
-        // 4. Últimas 5 Entradas
-        const [recentEntries] = await pool.query(`
-            SELECT r.DataHoraRegistro, e.BarCode, f.Nome as funcionarioNome
-            FROM Registro_Entrada_MP r
-            JOIN Estoque_MP e ON r.fk_Estoque_MP_BarCode = e.BarCode
-            JOIN Funcionarios f ON r.fk_Funcionarios_IDFuncionario = f.IDFuncionario
-            ORDER BY r.DataHoraRegistro DESC LIMIT 5
-        `);
-        
-        // 5. Últimas 5 Movimentações (com alias explícito para QuantidadeMovida)
-        const [recentMovements] = await pool.query(`
-            SELECT 
-                rm.DataHoraMovimento, 
-                rm.fk_Estoque_MP_BarCode as BarCode, 
-                rm.QuantidadeMovida AS quantidadeMovida, -- Alias explícito para garantir o nome da propriedade
-                f.Nome as funcionarioNome, 
-                m.Modelo as maquinaNome
-            FROM Registro_Movimentacao rm
-            JOIN Funcionarios f ON rm.fk_Funcionarios_IDFuncionario = f.IDFuncionario
-            JOIN Maquinas m ON rm.fk_Maquina_Identificacao = m.Identificacao
-            ORDER BY rm.DataHoraMovimento DESC LIMIT 5
-        `);
+        let kpiStock, kpiMovimentos, kpiFuncionarios, stockByType, consumptionByMachine, recentEntries, recentMovements;
+        try {
+            [kpiStock] = await pool.query("SELECT COUNT(*) as totalStock, SUM(CASE WHEN fk_Tipos_MP_TipoMP = 'Aguardando Identificação' THEN 1 ELSE 0 END) as awaitingId FROM Estoque_MP");
+        } catch (err) {
+            console.error('Erro na query kpiStock:', err);
+            throw new Error('Erro na query kpiStock: ' + err.message);
+        }
+        try {
+            [kpiMovimentos] = await pool.query("SELECT COUNT(*) as movementsToday, SUM(QuantidadeMovida) as unitsMovedToday FROM Registro_Movimentacao WHERE DATE(DataHoraMovimento) = CURDATE()");
+        } catch (err) {
+            console.error('Erro na query kpiMovimentos:', err);
+            throw new Error('Erro na query kpiMovimentos: ' + err.message);
+        }
+        try {
+            [kpiFuncionarios] = await pool.query("SELECT COUNT(*) as totalEmployees FROM Funcionarios");
+        } catch (err) {
+            console.error('Erro na query kpiFuncionarios:', err);
+            throw new Error('Erro na query kpiFuncionarios: ' + err.message);
+        }
+        try {
+            [stockByType] = await pool.query(`
+                SELECT 
+                    fk_Tipos_MP_TipoMP as tipo, 
+                    COUNT(*) as lotes,
+                    SUM(Quantidade) as totalQuantidade
+                FROM Estoque_MP 
+                GROUP BY fk_Tipos_MP_TipoMP 
+                ORDER BY lotes DESC
+            `);
+        } catch (err) {
+            console.error('Erro na query stockByType:', err);
+            throw new Error('Erro na query stockByType: ' + err.message);
+        }
+        try {
+            [consumptionByMachine] = await pool.query(`
+                SELECT m.Modelo, SUM(rm.QuantidadeMovida) as totalMovido
+                FROM Registro_Movimentacao rm
+                JOIN Maquinas m ON rm.fk_Maquina_Identificacao = m.Identificacao
+                GROUP BY m.Modelo
+                ORDER BY totalMovido DESC
+            `);
+        } catch (err) {
+            console.error('Erro na query consumptionByMachine:', err);
+            throw new Error('Erro na query consumptionByMachine: ' + err.message);
+        }
+        try {
+            [recentEntries] = await pool.query(`
+                SELECT r.DataHoraRegistro, e.BarCode, f.Nome as funcionarioNome
+                FROM Registro_Entrada_MP r
+                JOIN Estoque_MP e ON r.fk_Estoque_MP_BarCode = e.BarCode
+                JOIN Funcionarios f ON r.fk_Funcionarios_IDFuncionario = f.IDFuncionario
+                ORDER BY r.DataHoraRegistro DESC LIMIT 5
+            `);
+        } catch (err) {
+            console.error('Erro na query recentEntries:', err);
+            throw new Error('Erro na query recentEntries: ' + err.message);
+        }
+        try {
+            [recentMovements] = await pool.query(`
+                SELECT 
+                    rm.DataHoraMovimento, 
+                    rm.fk_Estoque_MP_BarCode as BarCode, 
+                    rm.QuantidadeMovida AS quantidadeMovida, -- Alias explícito para garantir o nome da propriedade
+                    f.Nome as funcionarioNome, 
+                    m.Modelo as maquinaNome
+                FROM Registro_Movimentacao rm
+                JOIN Funcionarios f ON rm.fk_Funcionarios_IDFuncionario = f.IDFuncionario
+                JOIN Maquinas m ON rm.fk_Maquina_Identificacao = m.Identificacao
+                ORDER BY rm.DataHoraMovimento DESC LIMIT 5
+            `);
+        } catch (err) {
+            console.error('Erro na query recentMovements:', err);
+            throw new Error('Erro na query recentMovements: ' + err.message);
+        }
 
         // Monta o objeto de resposta final
         const dashboardData = {
@@ -548,8 +576,8 @@ app.get('/api/dashboard/gestao', requireLogin, async (req, res) => {
         res.json(dashboardData);
 
     } catch (error) {
-        console.error("Erro ao buscar dados do dashboard:", error);
-        res.status(500).json({ message: "Erro ao carregar dados do dashboard." });
+        console.error("Erro ao buscar dados do dashboard (detalhado):", error);
+        res.status(500).json({ message: "Erro ao carregar dados do dashboard.", error: error.message });
     }
 });
 
