@@ -21,6 +21,7 @@
                 <div class="bg-white p-6 rounded-lg shadow-md">
                     <h3 class="text-xl font-semibold mb-4">Gerenciar Funcionários</h3>
                     <button id="add-employee-btn" class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600">Adicionar Novo Funcionário</button>
+                    <!-- Tabela será preenchida via JS -->
                 </div>
 
                 <!-- Gerenciar Máquinas -->
@@ -53,51 +54,6 @@
                     <table class="w-full mt-2 text-sm"><thead class="text-xs text-gray-700 uppercase bg-gray-50"><tr><th class="px-4 py-2">Material</th><th class="px-4 py-2">Máquina Compatível</th><th class="px-4 py-2">Ações</th></tr></thead><tbody id="compatibility-table-body"></tbody></table>
                 </div>
             </div>
-        </div>
-
-        <!-- Gerenciar Contatos -->
-        <div class="bg-white p-6 rounded-lg shadow-md mt-8">
-            <h3 class="text-xl font-semibold mb-4">Gerenciar Contatos</h3>
-            <table class="w-full mt-4 text-sm">
-                <thead class="text-xs text-gray-700 uppercase bg-gray-50">
-                    <tr>
-                        <th class="px-4 py-2">Nome</th>
-                        <th class="px-4 py-2">Email</th>
-                        <th class="px-4 py-2">Assunto</th>
-                        <th class="px-4 py-2">Mensagem</th>
-                        <th class="px-4 py-2">Status</th>
-                        <th class="px-4 py-2">Data</th>
-                        <th class="px-4 py-2">Ações</th>
-                    </tr>
-                </thead>
-                <tbody id="contacts-table-body">
-                    <% if (contatos && contatos.length > 0) { %>
-                        <% contatos.forEach(contato => { %>
-                            <tr data-id="<%= contato.id %>">
-                                <td class="px-4 py-2"><%= contato.nome %></td>
-                                <td class="px-4 py-2"><%= contato.email %></td>
-                                <td class="px-4 py-2"><%= contato.assunto %></td>
-                                <td class="px-4 py-2"><%= contato.mensagem %></td>
-                                <td class="px-4 py-2">
-                                    <select class="contact-status border rounded px-2 py-1">
-                                        <option value="novo" <%= contato.status === 'novo' ? 'selected' : '' %>>Novo</option>
-                                        <option value="lido" <%= contato.status === 'lido' ? 'selected' : '' %>>Lido</option>
-                                        <option value="respondido" <%= contato.status === 'respondido' ? 'selected' : '' %>>Respondido</option>
-                                    </select>
-                                </td>
-                                <td class="px-4 py-2"><%= contato.data_envio %></td>
-                                <td class="px-4 py-2">
-                                    <button class="delete-contact bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600">Excluir</button>
-                                </td>
-                            </tr>
-                        <% }); %>
-                    <% } else { %>
-                        <tr>
-                            <td colspan="7" class="text-center text-gray-500 py-4">Nenhum contato encontrado</td>
-                        </tr>
-                    <% } %>
-                </tbody>
-            </table>
         </div>
     </div>
 
