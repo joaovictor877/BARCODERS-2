@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('movimentacaoForm');
     const codigoLoteInput = document.getElementById('codigoLote');
     const maquinaSelect = document.getElementById('maquina');
+    const quantidadeInput = document.getElementById('quantidade');
     const registrarBtn = document.getElementById('registrarBtn');
     const successMessage = document.getElementById('successMessage');
     const errorMessage = document.getElementById('errorMessage');
@@ -18,28 +19,28 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // --- LÓGICA DO SCANNER ZXING ---
     let codeReader = null; 
+    let selectedDeviceId = null;
 
     const hideMessages = () => {
         successMessage.classList.add('hidden');
         errorMessage.classList.add('hidden');
     };
 
+    const onScanSuccess = (resultText) => {
+        codigoLoteInput.value = resultText;
+        stopScanner();
+        
+        codigoLoteInput.classList.add('bg-green-100', 'border-green-500');
+        setTimeout(() => {
+            codigoLoteInput.classList.remove('bg-green-100', 'border-green-500');
+        }, 1000);
+        new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU'+Array(300).join('123')).play();
+    };
+
     const startScanner = () => {
         if (!selectedDeviceId) return;
-        
         codeReader.decodeFromVideoDevice(selectedDeviceId, 'video-preview', (result, err) => {
-            if (result) {
-                console.log('Código detectado:', result);
-                codigoLoteInput.value = result.getText();
-                stopScanner();
-                
-                // Feedback visual e sonoro
-                codigoLoteInput.classList.add('bg-green-100', 'border-green-500');
-                setTimeout(() => {
-                    codigoLoteInput.classList.remove('bg-green-100', 'border-green-500');
-                }, 1000);
-                new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU'+Array(300).join('123')).play();
-            }
+            if (result) { onScanSuccess(result.getText()); }
             if (err && !(err instanceof ZXing.NotFoundException)) {
                 console.error('Erro de decodificação:', err);
                 errorMessage.textContent = `Erro: ${err.message}`;
@@ -50,7 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const stopScanner = () => {
         if (codeReader) {
-            codeReader.reset(); // Libera a câmera
+            codeReader.reset();
         }
         scannerContainer.classList.add('hidden');
         cameraControls.classList.add('hidden');
@@ -60,8 +61,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     startCameraBtn.addEventListener('click', () => {
         hideMessages();
-        codigoLoteInput.value = ''; // Limpa o campo de texto
-        codeReader = new ZXing.BrowserMultiFormatReader(); // Cria uma NOVA instância do leitor
+        codigoLoteInput.value = '';
+        codeReader = new ZXing.BrowserMultiFormatReader();
+
         scannerContainer.classList.remove('hidden');
         cameraControls.classList.remove('hidden');
         startCameraBtn.classList.add('hidden');
@@ -96,13 +98,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     videoSelect.addEventListener('change', () => {
         selectedDeviceId = videoSelect.value;
-        if (codeReader) {
-            codeReader.reset();
-        }
+        if (codeReader) { codeReader.reset(); }
         startScanner();
     });
 
-    // --- LÓGICA DO FORMULÁRIO ---
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         hideMessages();
@@ -111,6 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = {
             codigoLote: codigoLoteInput.value,
             maquinaId: maquinaSelect.value,
+            quantidadeMovida: quantidadeInput.value 
         };
 
         try {
@@ -125,6 +125,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 successMessage.textContent = result.message;
                 successMessage.classList.remove('hidden');
                 codigoLoteInput.value = '';
+                quantidadeInput.value = '';
                 codigoLoteInput.focus();
             } else {
                 errorMessage.textContent = result.message || 'Ocorreu um erro.';

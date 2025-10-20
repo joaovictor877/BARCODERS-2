@@ -73,6 +73,7 @@ CREATE TABLE Registro_Entrada_MP (
 CREATE TABLE Registro_Movimentacao (
     IDMovimento BIGINT NOT NULL AUTO_INCREMENT,
     DataHoraMovimento DATETIME,
+    QuantidadeMovida INT NOT NULL,
     fk_Estoque_MP_BarCode VARCHAR(255) NOT NULL,
     fk_Maquina_Identificacao BIGINT NOT NULL,
     fk_Funcionarios_IDFuncionario BIGINT NOT NULL,

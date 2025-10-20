@@ -193,55 +193,85 @@ app.post('/api/recebimento', requireLogin, async (req, res) => {
 
 // Endpoint para REGISTRAR a movimentação de material para uma máquina
 app.post('/api/movimentacao', requireLogin, async (req, res) => {
-    const { codigoLote, maquinaId } = req.body;
+    const { codigoLote, maquinaId, quantidadeMovida } = req.body;
     const funcionarioId = req.session.userId;
 
-    if (!codigoLote || !maquinaId) {
-        return res.status(400).json({ success: false, message: 'Código do Lote e Máquina são obrigatórios.' });
+    // Validação inicial dos dados recebidos
+    if (!codigoLote || !maquinaId || !quantidadeMovida || parseInt(quantidadeMovida) <= 0) {
+        return res.status(400).json({ success: false, message: 'Código do Lote, Máquina e uma Quantidade válida são obrigatórios.' });
     }
 
+    let connection;
     try {
-        // Validação 1: O lote existe e pegamos seu tipo de material.
-        const [estoqueRows] = await pool.query(
-            'SELECT BarCode, fk_Tipos_MP_TipoMP FROM Estoque_MP WHERE BarCode = ?', 
+        // Inicia a transação para garantir que todas as operações ocorram ou nenhuma ocorra
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
+
+        // Busca o lote e sua quantidade atual, travando a linha para evitar condições de corrida
+        const [estoqueRows] = await connection.query(
+            'SELECT BarCode, Quantidade, fk_Tipos_MP_TipoMP FROM Estoque_MP WHERE BarCode = ? FOR UPDATE', 
             [codigoLote]
         );
+        
+        // Validação 1: O lote existe no estoque?
         if (estoqueRows.length === 0) {
+            await connection.rollback(); // Desfaz a transação
             return res.status(404).json({ success: false, message: 'Lote não encontrado no estoque. Verifique o código de barras.' });
         }
         
         const lote = estoqueRows[0];
-        const tipoMaterial = lote.fk_Tipos_MP_TipoMP;
 
-        // Validação 2: O material já foi identificado pela Qualidade?
-        if (tipoMaterial === 'Aguardando Identificação') {
+        // Validação 2: A quantidade a ser movida é maior que a disponível?
+        if (parseInt(quantidadeMovida) > lote.Quantidade) {
+            await connection.rollback();
+            return res.status(400).json({ success: false, message: `Quantidade a ser movida (${quantidadeMovida}) é maior que a disponível em estoque (${lote.Quantidade}).` });
+        }
+        
+        // Validação 3: O material já foi identificado pela Qualidade?
+        if (lote.fk_Tipos_MP_TipoMP === 'Aguardando Identificação') {
+            await connection.rollback();
             return res.status(400).json({ success: false, message: 'Este lote ainda não foi identificado pela equipe de Qualidade e não pode ser movimentado.' });
         }
 
-        // Validação 3: O material é compatível com a máquina de destino?
-        const [compativelRows] = await pool.query(
+        // Validação 4: O material é compatível com a máquina de destino?
+        const [compativelRows] = await connection.query(
             'SELECT * FROM Compativel WHERE fk_Tipos_MP_TipoMP = ? AND fk_Maquina_Identificacao = ?',
-            [tipoMaterial, maquinaId]
+            [lote.fk_Tipos_MP_TipoMP, maquinaId]
         );
         if (compativelRows.length === 0) {
-            const [maquinaRows] = await pool.query('SELECT Modelo FROM Maquinas WHERE Identificacao = ?', [maquinaId]);
+            await connection.rollback();
+            const [maquinaRows] = await connection.query('SELECT Modelo FROM Maquinas WHERE Identificacao = ?', [maquinaId]);
             const nomeMaquina = maquinaRows.length > 0 ? maquinaRows[0].Modelo : `ID ${maquinaId}`;
-            return res.status(400).json({ success: false, message: `Material do tipo "${tipoMaterial}" não é compatível com a máquina "${nomeMaquina}".` });
+            return res.status(400).json({ success: false, message: `Material do tipo "${lote.fk_Tipos_MP_TipoMP}" não é compatível com a máquina "${nomeMaquina}".` });
         }
 
-        // Se todas as validações passaram, registra a movimentação.
-        const sql = `
-            INSERT INTO Registro_Movimentacao 
-            (DataHoraMovimento, fk_Estoque_MP_BarCode, fk_Maquina_Identificacao, fk_Funcionarios_IDFuncionario)
-            VALUES (?, ?, ?, ?)
-        `;
-        await pool.query(sql, [new Date(), codigoLote, maquinaId, funcionarioId]);
+        // Se todas as validações passaram, executa as atualizações no banco
+        
+        // ETAPA 1: Subtrai a quantidade do estoque principal
+        const novaQuantidade = lote.Quantidade - parseInt(quantidadeMovida);
+        await connection.query(
+            'UPDATE Estoque_MP SET Quantidade = ? WHERE BarCode = ?',
+            [novaQuantidade, codigoLote]
+        );
 
-        res.status(201).json({ success: true, message: `Lote ${codigoLote} movimentado para a máquina com sucesso!` });
+        // ETAPA 2: Insere o registro da movimentação com a quantidade específica
+         const sqlMovimentacao = `
+            INSERT INTO Registro_Movimentacao 
+            (DataHoraMovimento, QuantidadeMovida, fk_Estoque_MP_BarCode, fk_Maquina_Identificacao, fk_Funcionarios_IDFuncionario)
+            VALUES (?, ?, ?, ?, ?)
+        `;
+        // A ordem dos parâmetros no array agora corresponde à ordem na query.
+        await connection.query(sqlMovimentacao, [new Date(), quantidadeMovida, codigoLote, maquinaId, funcionarioId]);
+
+        await connection.commit();
+        res.status(201).json({ success: true, message: `${quantidadeMovida} unidades do lote ${codigoLote} movimentadas com sucesso!` });
 
     } catch (error) {
+        if (connection) await connection.rollback();
         console.error("Erro ao registrar movimentação:", error);
         res.status(500).json({ success: false, message: 'Erro interno ao registrar a movimentação.' });
+    } finally {
+        if (connection) connection.release();
     }
 });
 
@@ -452,48 +482,65 @@ app.post('/api/identificar', requireLogin, async (req, res) => {
 // API para popular o DASHBOARD DE GESTÃO
 app.get('/api/dashboard/gestao', requireLogin, async (req, res) => {
     try {
-        // 1. KPIs (Key Performance Indicators)
-        const [kpiStock] = await pool.query("SELECT COUNT(*) as total, SUM(CASE WHEN fk_Tipos_MP_TipoMP = 'Aguardando Identificação' THEN 1 ELSE 0 END) as aguardando FROM Estoque_MP");
-        const [kpiMovimentos] = await pool.query("SELECT COUNT(*) as hoje FROM Registro_Movimentacao WHERE DATE(DataHoraMovimento) = CURDATE()");
-        const [kpiFuncionarios] = await pool.query("SELECT COUNT(*) as total FROM Funcionarios");
+        // 1. KPIs (Key Performance Indicators) com aliases explícitos
+        const [kpiStock] = await pool.query("SELECT COUNT(*) as totalStock, SUM(CASE WHEN fk_Tipos_MP_TipoMP = 'Aguardando Identificação' THEN 1 ELSE 0 END) as awaitingId FROM Estoque_MP");
+        const [kpiMovimentos] = await pool.query("SELECT COUNT(*) as movementsToday, SUM(QuantidadeMovida) as unitsMovedToday FROM Registro_Movimentacao WHERE DATE(DataHoraMovimento) = CURDATE()");
+        const [kpiFuncionarios] = await pool.query("SELECT COUNT(*) as totalEmployees FROM Funcionarios");
 
         // 2. Gráfico de Estoque por Tipo
         const [stockByType] = await pool.query(`
-            SELECT fk_Tipos_MP_TipoMP as tipo, COUNT(*) as quantidade 
-            FROM Estoque_MP 
-            GROUP BY fk_Tipos_MP_TipoMP 
-            ORDER BY quantidade DESC
+        SELECT 
+            fk_Tipos_MP_TipoMP as tipo, 
+            COUNT(*) as lotes,
+            SUM(Quantidade) as totalQuantidade
+        FROM Estoque_MP 
+        GROUP BY fk_Tipos_MP_TipoMP 
+        ORDER BY lotes DESC
         `);
 
-        // 3. Últimas 5 Entradas
+        // 3. Gráfico de Consumo de Unidades por Máquina
+        const [consumptionByMachine] = await pool.query(`
+            SELECT m.Modelo, SUM(rm.QuantidadeMovida) as totalMovido
+            FROM Registro_Movimentacao rm
+            JOIN Maquinas m ON rm.fk_Maquina_Identificacao = m.Identificacao
+            GROUP BY m.Modelo
+            ORDER BY totalMovido DESC
+        `);
+
+        // 4. Últimas 5 Entradas
         const [recentEntries] = await pool.query(`
-            SELECT r.DataHoraRegistro, e.BarCode, f.Nome as FuncionarioNome
+            SELECT r.DataHoraRegistro, e.BarCode, f.Nome as funcionarioNome
             FROM Registro_Entrada_MP r
             JOIN Estoque_MP e ON r.fk_Estoque_MP_BarCode = e.BarCode
             JOIN Funcionarios f ON r.fk_Funcionarios_IDFuncionario = f.IDFuncionario
-            ORDER BY r.DataHoraRegistro DESC
-            LIMIT 5
+            ORDER BY r.DataHoraRegistro DESC LIMIT 5
         `);
         
-        // 4. Últimas 5 Movimentações
+        // 5. Últimas 5 Movimentações (com alias explícito para QuantidadeMovida)
         const [recentMovements] = await pool.query(`
-            SELECT rm.DataHoraMovimento, rm.fk_Estoque_MP_BarCode as BarCode, f.Nome as FuncionarioNome, m.Modelo as MaquinaNome
+            SELECT 
+                rm.DataHoraMovimento, 
+                rm.fk_Estoque_MP_BarCode as BarCode, 
+                rm.QuantidadeMovida AS quantidadeMovida, -- Alias explícito para garantir o nome da propriedade
+                f.Nome as funcionarioNome, 
+                m.Modelo as maquinaNome
             FROM Registro_Movimentacao rm
             JOIN Funcionarios f ON rm.fk_Funcionarios_IDFuncionario = f.IDFuncionario
             JOIN Maquinas m ON rm.fk_Maquina_Identificacao = m.Identificacao
-            ORDER BY rm.DataHoraMovimento DESC
-            LIMIT 5
+            ORDER BY rm.DataHoraMovimento DESC LIMIT 5
         `);
 
-        // Monta o objeto de resposta
+        // Monta o objeto de resposta final
         const dashboardData = {
             kpis: {
-                totalStock: kpiStock[0].total || 0,
-                awaitingId: kpiStock[0].aguardando || 0,
-                movementsToday: kpiMovimentos[0].hoje || 0,
-                totalEmployees: kpiFuncionarios[0].total || 0
+                totalStock: kpiStock[0].totalStock || 0,
+                awaitingId: kpiStock[0].awaitingId || 0,
+                movementsToday: kpiMovimentos[0].movementsToday || 0,
+                unitsMovedToday: kpiMovimentos[0].unitsMovedToday || 0,
+                totalEmployees: kpiFuncionarios[0].totalEmployees || 0
             },
             stockByType,
+            consumptionByMachine,
             recentEntries,
             recentMovements
         };
@@ -505,7 +552,6 @@ app.get('/api/dashboard/gestao', requireLogin, async (req, res) => {
         res.status(500).json({ message: "Erro ao carregar dados do dashboard." });
     }
 });
-
 
 // API para VERIFICAR existência de Email ou CPF
 app.post('/api/admin/employees/check', requireLogin, requireAdmin, async (req, res) => {
@@ -546,7 +592,6 @@ app.post('/api/admin/employees/check', requireLogin, requireAdmin, async (req, r
         res.status(500).json({ message: 'Erro interno ao verificar dados.' });
     }
 });
-
 
 // --- SERVIDORES DE ARQUIVOS ESTÁTICOS (DEFINIDOS POR ÚLTIMO) ---
 

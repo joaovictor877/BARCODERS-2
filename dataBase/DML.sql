@@ -53,6 +53,7 @@ SELECT * FROM Tipos_MP;
 SELECT * FROM Maquinas;
 SELECT * FROM Funcionarios;
 SELECT * FROM Estoque_MP;
+SELECT * FROM Registro_Movimentacao;
 -- 2. Consultas com Filtro (WHERE)
 -- Encontrar um funcionário específico pelo seu e-mail (EX: TELA DE LOGIN)
 SELECT IDFuncionario, Nome, Cargo, NivelAcesso, Senha
