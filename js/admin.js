@@ -337,6 +337,49 @@ document.addEventListener('DOMContentLoaded', () => {
         fetchAndRender();
     });
 
+    // Gerenciar contatos
+    document.addEventListener('DOMContentLoaded', function() {
+        // Atualizar status do contato
+        document.querySelectorAll('.contact-status').forEach(function(select) {
+            select.addEventListener('change', function() {
+                const tr = select.closest('tr');
+                const id = tr.getAttribute('data-id');
+                const status = select.value;
+                fetch('/admin/contato/status', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({id, status})
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        select.classList.add('bg-green-100');
+                        setTimeout(() => select.classList.remove('bg-green-100'), 1000);
+                    }
+                });
+            });
+        });
+
+        // Excluir contato
+        document.querySelectorAll('.delete-contact').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const tr = btn.closest('tr');
+                const id = tr.getAttribute('data-id');
+                if (confirm('Tem certeza que deseja excluir este contato?')) {
+                    fetch(`/admin/contato/${id}`, {
+                        method: 'DELETE'
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            tr.remove();
+                        }
+                    });
+                }
+            });
+        });
+    });
+
     // --- INICIALIZAÇÃO ---
     fetchAndRender();
 });
