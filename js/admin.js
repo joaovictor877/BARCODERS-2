@@ -1,12 +1,3 @@
-// ...existing code...
-// Dynamically add an image to the DOM using JavaScript
-const img = document.createElement('img');
-img.src = 'assets/img/logo_barcoders.jpg';
-img.alt = 'Logo BARCODERS';
-img.style.height = '40px';
-document.body.prepend(img); // Or append to a specific element
-// ...existing code...
-
 document.addEventListener('DOMContentLoaded', () => {
     // --- SELETORES GLOBAIS ---
     const modal = document.getElementById('admin-modal');
