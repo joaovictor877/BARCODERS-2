@@ -1,6 +1,4 @@
-if (typeof API_ENDPOINT === 'undefined') {
-    var API_ENDPOINT = 'https://barcoders.azurewebsites.net';
-}
+// API_ENDPOINT é definido em config.js
 // var API_ENDPOINT = 'https://barcoders.azurewebsites.net'; --- IGNORE ---
 document.addEventListener('DOMContentLoaded', function () {
     const loginBtn = document.getElementById('loginBtn');
