@@ -6,7 +6,7 @@ name: Build and deploy Node.js app to Azure Web App - barcoders
 on:
   push:
     branches:
-      - main
+      - restaurado-3108ed7
   workflow_dispatch:
 
 jobs:
@@ -51,9 +51,9 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_AB686FDF334945E898D126D3256B4F4A }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_D7973032DB4043F18DE7BE845DA43277 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_1C2A14EA5ED74C18AAB8699994D2843A }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_5359FA3F9BBB46D9B17D16FC200C8E15 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_BA2DAE3E7793439790F098AD7DF7628E }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_3E58A90C263D4B6A8AE2E85CA202B016 }}
 
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
