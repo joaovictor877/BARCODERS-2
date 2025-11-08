@@ -1,8 +1,28 @@
-create database estoque;
-use estoque;
-#drop database estoque;
+-- DDL.sql (ATUALIZADO COM BERÇOS E FLUXO SEPARADO)
 
--- --- Tabela para os Fornecedores ---
+-- Se o banco de dados já existir, apague-o para um recomeço limpo (opcional, cuidado em produção)
+DROP DATABASE IF EXISTS estoque;
+CREATE DATABASE IF NOT EXISTS estoque;
+USE estoque;
+
+-- --- ETAPA 1: DELETAR TABELAS NA ORDEM INVERSA DE DEPENDÊNCIA ---
+-- Deleta primeiro as tabelas que dependem de outras (as "filhas")
+DROP TABLE IF EXISTS Registro_Movimentacao;
+DROP TABLE IF EXISTS Registro_Identificacao_MP;
+DROP TABLE IF EXISTS Registro_Entrada_MP;
+DROP TABLE IF EXISTS Compativel;
+-- Agora que as "filhas" se foram, podemos deletar as "pais"
+DROP TABLE IF EXISTS Estoque_MP;
+DROP TABLE IF EXISTS Bercos;
+DROP TABLE IF EXISTS Maquinas;
+DROP TABLE IF EXISTS Funcionarios;
+DROP TABLE IF EXISTS Tipos_MP;
+DROP TABLE IF EXISTS Fornecedores;
+
+
+-- --- ETAPA 2: CRIAR TABELAS NA ORDEM CORRETA DE DEPENDÊNCIA ---
+-- Cria primeiro as tabelas que NÃO dependem de outras (as "pais")
+
 CREATE TABLE Fornecedores (
     CNPJ VARCHAR(20) NOT NULL,
     Nome VARCHAR(255),
@@ -11,17 +31,16 @@ CREATE TABLE Fornecedores (
     PRIMARY KEY (CNPJ)
 );
 
--- --- Tabela para os Tipos de Matéria-Prima (Catálogo) ---
 CREATE TABLE Tipos_MP (
     TipoMP VARCHAR(255) NOT NULL,
     PRIMARY KEY (TipoMP)
 );
 
-
--- --- Tabela para os Funcionários ---
 CREATE TABLE Funcionarios ( 
     IDFuncionario BIGINT NOT NULL AUTO_INCREMENT,
     Nome VARCHAR(255) NOT NULL,
+    Foto LONGBLOB NULL,
+    Face_Embedding TEXT NULL,
     Email VARCHAR(255) NOT NULL UNIQUE,
     CPF VARCHAR(11) NOT NULL UNIQUE,
     Senha VARCHAR(255) NOT NULL,
@@ -30,68 +49,88 @@ CREATE TABLE Funcionarios (
     PRIMARY KEY (IDFuncionario)
 );
 
-
--- --- Tabela para as Máquinas ---
 CREATE TABLE Maquinas (
     Identificacao BIGINT NOT NULL AUTO_INCREMENT,
     Modelo VARCHAR(255),
     PRIMARY KEY (Identificacao)
 );
 
--- --- Tabela para o controle de Estoque de Matéria-Prima (Lotes) ---
-CREATE TABLE Estoque_MP (
-    BarCode VARCHAR(255) NOT NULL,
-    Quantidade INT,
-    fk_Tipos_MP_TipoMP VARCHAR(255) NOT NULL,
-    fk_Fornecedores_CNPJ VARCHAR(20) NOT NULL,
-    PRIMARY KEY (BarCode),
-    FOREIGN KEY (fk_Tipos_MP_TipoMP) REFERENCES Tipos_MP (TipoMP),
-    FOREIGN KEY (fk_Fornecedores_CNPJ) REFERENCES Fornecedores (CNPJ)
+CREATE TABLE Bercos (
+    ID BIGINT NOT NULL AUTO_INCREMENT,
+    Nome VARCHAR(255) NOT NULL UNIQUE,
+    PRIMARY KEY (ID)
 );
 
--- --- Tabela Associativa para compatibilidade entre Máquinas e Matérias-Primas ---
+-- Agora, cria as tabelas que DEPENDEM das tabelas acima
+
+CREATE TABLE Estoque_MP (
+    BarCode VARCHAR(255) NOT NULL,
+    Quantidade INT NULL,
+    fk_Tipos_MP_TipoMP VARCHAR(255) NOT NULL DEFAULT 'Aguardando Identificação',
+    fk_Fornecedores_CNPJ VARCHAR(20) NOT NULL,
+    fk_Berco_ID BIGINT NULL,
+    Prateleira_Ocupada CHAR(1) NULL,
+    PRIMARY KEY (BarCode),
+    FOREIGN KEY (fk_Tipos_MP_TipoMP) REFERENCES Tipos_MP (TipoMP),
+    FOREIGN KEY (fk_Fornecedores_CNPJ) REFERENCES Fornecedores (CNPJ),
+    FOREIGN KEY (fk_Berco_ID) REFERENCES Bercos (ID) ON DELETE SET NULL
+);
+
+-- Adiciona as colunas de prateleiras à tabela Bercos e suas FKs para Estoque_MP
+ALTER TABLE Bercos
+    ADD COLUMN Prateleira_A VARCHAR(255) NULL UNIQUE, ADD FOREIGN KEY (Prateleira_A) REFERENCES Estoque_MP(BarCode) ON DELETE SET NULL,
+    ADD COLUMN Prateleira_B VARCHAR(255) NULL UNIQUE, ADD FOREIGN KEY (Prateleira_B) REFERENCES Estoque_MP(BarCode) ON DELETE SET NULL,
+    ADD COLUMN Prateleira_C VARCHAR(255) NULL UNIQUE, ADD FOREIGN KEY (Prateleira_C) REFERENCES Estoque_MP(BarCode) ON DELETE SET NULL,
+    ADD COLUMN Prateleira_D VARCHAR(255) NULL UNIQUE, ADD FOREIGN KEY (Prateleira_D) REFERENCES Estoque_MP(BarCode) ON DELETE SET NULL,
+    ADD COLUMN Prateleira_E VARCHAR(255) NULL UNIQUE, ADD FOREIGN KEY (Prateleira_E) REFERENCES Estoque_MP(BarCode) ON DELETE SET NULL,
+    ADD COLUMN Prateleira_F VARCHAR(255) NULL UNIQUE, ADD FOREIGN KEY (Prateleira_F) REFERENCES Estoque_MP(BarCode) ON DELETE SET NULL,
+    ADD COLUMN Prateleira_G VARCHAR(255) NULL UNIQUE, ADD FOREIGN KEY (Prateleira_G) REFERENCES Estoque_MP(BarCode) ON DELETE SET NULL,
+    ADD COLUMN Prateleira_H VARCHAR(255) NULL UNIQUE, ADD FOREIGN KEY (Prateleira_H) REFERENCES Estoque_MP(BarCode) ON DELETE SET NULL,
+    ADD COLUMN Prateleira_I VARCHAR(255) NULL UNIQUE, ADD FOREIGN KEY (Prateleira_I) REFERENCES Estoque_MP(BarCode) ON DELETE SET NULL,
+    ADD COLUMN Prateleira_J VARCHAR(255) NULL UNIQUE, ADD FOREIGN KEY (Prateleira_J) REFERENCES Estoque_MP(BarCode) ON DELETE SET NULL;
+
 CREATE TABLE Compativel (
     fk_Tipos_MP_TipoMP VARCHAR(255) NOT NULL,
     fk_Maquina_Identificacao BIGINT NOT NULL,
     PRIMARY KEY (fk_Tipos_MP_TipoMP, fk_Maquina_Identificacao),
-    FOREIGN KEY (fk_Tipos_MP_TipoMP) REFERENCES Tipos_MP (TipoMP),
-    FOREIGN KEY (fk_Maquina_Identificacao) REFERENCES Maquinas (Identificacao)
+    FOREIGN KEY (fk_Tipos_MP_TipoMP) REFERENCES Tipos_MP (TipoMP) ON DELETE CASCADE,
+    FOREIGN KEY (fk_Maquina_Identificacao) REFERENCES Maquinas (Identificacao) ON DELETE CASCADE
 );
 
--- --- Tabela para o Registro de Entrada de Matéria-Prima ---
 CREATE TABLE Registro_Entrada_MP (
     IDEntradaRegistro BIGINT NOT NULL AUTO_INCREMENT,
     DataHoraRegistro DATETIME,
     fk_Estoque_MP_BarCode VARCHAR(255) NOT NULL,
-    fk_Funcionarios_IDFuncionario BIGINT NOT NULL,
+    fk_Funcionarios_IDFuncionario BIGINT NULL,
     PRIMARY KEY (IDEntradaRegistro),
-    FOREIGN KEY (fk_Estoque_MP_BarCode) REFERENCES Estoque_MP (BarCode),
-    FOREIGN KEY (fk_Funcionarios_IDFuncionario) REFERENCES Funcionarios (IDFuncionario)
+    FOREIGN KEY (fk_Estoque_MP_BarCode) REFERENCES Estoque_MP (BarCode) ON DELETE CASCADE,
+    FOREIGN KEY (fk_Funcionarios_IDFuncionario) REFERENCES Funcionarios (IDFuncionario) ON DELETE SET NULL
 );
 
--- --- Tabela para o Registro de Movimentação (uso em produção) ---
+CREATE TABLE Registro_Identificacao_MP (
+    IDIdentificacao BIGINT NOT NULL AUTO_INCREMENT,
+    DataHoraIdentificacao DATETIME,
+    fk_Funcionarios_IDFuncionario BIGINT NULL,
+    fk_Tipos_MP_TipoMP VARCHAR(255) NOT NULL,
+    fk_Estoque_MP_BarCode VARCHAR(255) NOT NULL,
+    PRIMARY KEY (IDIdentificacao),
+    FOREIGN KEY (fk_Funcionarios_IDFuncionario) REFERENCES Funcionarios (IDFuncionario) ON DELETE SET NULL,
+    FOREIGN KEY (fk_Tipos_MP_TipoMP) REFERENCES Tipos_MP (TipoMP),
+    FOREIGN KEY (fk_Estoque_MP_BarCode) REFERENCES Estoque_MP (BarCode) ON DELETE CASCADE
+);
+
 CREATE TABLE Registro_Movimentacao (
     IDMovimento BIGINT NOT NULL AUTO_INCREMENT,
     DataHoraMovimento DATETIME,
     QuantidadeMovida INT NOT NULL,
-    fk_Estoque_MP_BarCode VARCHAR(255) NOT NULL,
+    fk_Estoque_MP_BarCode VARCHAR(255) NULL, -- PERMITE NULL para registrar scans de códigos inexistentes
+    BarcodeLido VARCHAR(255) NULL, -- NOVA COLUNA para armazenar o que foi escaneado
     fk_Maquina_Identificacao BIGINT NOT NULL,
-    fk_Funcionarios_IDFuncionario BIGINT NOT NULL,
+    fk_Funcionarios_IDFuncionario BIGINT NULL,
+    OperacaoValida TINYINT(1) NOT NULL,
+    TipoErro VARCHAR(50) NOT NULL,
     PRIMARY KEY (IDMovimento),
-    FOREIGN KEY (fk_Estoque_MP_BarCode) REFERENCES Estoque_MP (BarCode),
+    FOREIGN KEY (fk_Estoque_MP_BarCode) REFERENCES Estoque_MP (BarCode) ON DELETE SET NULL, -- MUDADO PARA SET NULL
     FOREIGN KEY (fk_Maquina_Identificacao) REFERENCES Maquinas (Identificacao),
-    FOREIGN KEY (fk_Funcionarios_IDFuncionario) REFERENCES Funcionarios (IDFuncionario)
-);
-
--- --- Tabela para Identificação/Associação de Matéria-Prima ---
-CREATE TABLE Registro_Identificacao_MP (
-    IDIdentificacao BIGINT NOT NULL AUTO_INCREMENT,
-    DataHoraIdentificacao DATETIME,
-    fk_Funcionarios_IDFuncionario BIGINT NOT NULL,
-    fk_Tipos_MP_TipoMP VARCHAR(255) NOT NULL,
-    fk_Estoque_MP_BarCode VARCHAR(255) NOT NULL,
-    PRIMARY KEY (IDIdentificacao),
-    FOREIGN KEY (fk_Funcionarios_IDFuncionario) REFERENCES Funcionarios (IDFuncionario),
-    FOREIGN KEY (fk_Tipos_MP_TipoMP) REFERENCES Tipos_MP (TipoMP),
-    FOREIGN KEY (fk_Estoque_MP_BarCode) REFERENCES Estoque_MP (BarCode)
+    FOREIGN KEY (fk_Funcionarios_IDFuncionario) REFERENCES Funcionarios (IDFuncionario) ON DELETE SET NULL
 );

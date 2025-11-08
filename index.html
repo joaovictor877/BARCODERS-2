@@ -1,39 +1,61 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <script src="js/config.js"></script>
-    <script src="js/main.js"></script>
-    <script src="js/login.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BARCODER'S - Gestão de Estoque Amemiya</title>
+    
+    <!-- Scripts Essenciais -->
+    <script src="js/config.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/facial-login.js"></script> <!-- Trocado de login.js para facial-login.js -->
+    
+    <!-- Biblioteca de Reconhecimento Facial -->
+    <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@latest/dist/face-api.min.js"></script>
+    
+    <!-- Estilização -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="css/style.css">
-    <link rel="icon" href="assets/img/logo_barcoders.jpg">
+    <link rel="icon" href="assets/img/logo_barcoders.png">
 </head>
 <body class="bg-gray-50 smooth-scroll">
+
   <!-- Header -->
   <header class="bg-white shadow-sm border-b sticky top-0 z-50">
    <div class="container mx-auto px-6 py-4">
     <div class="flex items-center justify-between">
      <div class="flex items-center space-x-4">
-      <div class="w-12 h-12 rounded-lg flex items-center justify-center bg-white border border-gray-200"><img src="assets/img/logo_barcoders.png" alt="Logo BARCODER'S" class="w-full h-full object-contain rounded-lg" onerror="this.src=''; this.alt='Logo não disponível'; this.style.display='none';">
+      <div class="w-12 h-12 rounded-lg flex items-center justify-center bg-white border border-gray-200"><img src="assets/img/logo_barcoders.png" alt="Logo BARCODER'S" class="w-full h-full object-contain rounded-lg">
       </div>
       <div>
        <h1 class="text-2xl font-bold text-gray-800">BARCODER'S</h1>
        <p class="text-gray-500 text-sm">Sistema de Gestão de Estoque</p>
       </div>
      </div>
-     <nav class="hidden md:flex items-center space-x-8"><a href="#projeto" class="text-gray-600 hover:text-indigo-600 transition-colors cursor-pointer">Projeto</a> <a href="#funcionalidades" class="text-gray-600 hover:text-indigo-600 transition-colors cursor-pointer">Funcionalidades</a> <a href="#tecnologias" class="text-gray-600 hover:text-indigo-600 transition-colors cursor-pointer">Tecnologias</a> <a href="#contato" class="text-gray-600 hover:text-indigo-600 transition-colors cursor-pointer">Contato</a> <button onclick="abrirLogin()" class="bg-indigo-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors shadow-sm"> Login </button>
-     </nav><!-- Menu Mobile --> <button onclick="toggleMobileMenu()" class="md:hidden p-2 rounded-lg hover:bg-gray-100">
-      <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-      </svg></button>
-    </div><!-- Menu Mobile Expandido -->
+     <nav class="hidden md:flex items-center space-x-8">
+        <a href="#projeto" class="text-gray-600 hover:text-indigo-600 transition-colors cursor-pointer">Projeto</a> 
+        <a href="#funcionalidades" class="text-gray-600 hover:text-indigo-600 transition-colors cursor-pointer">Funcionalidades</a> 
+        <a href="#tecnologias" class="text-gray-600 hover:text-indigo-600 transition-colors cursor-pointer">Tecnologias</a> 
+        <a href="#contato" class="text-gray-600 hover:text-indigo-600 transition-colors cursor-pointer">Contato</a> 
+        <button onclick="abrirLoginFacial()" class="bg-indigo-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors shadow-sm"> Login Facial </button>
+     </nav>
+     <!-- Menu Mobile --> 
+     <button onclick="toggleMobileMenu()" class="md:hidden p-2 rounded-lg hover:bg-gray-100">
+      <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" /></svg>
+     </button>
+    </div>
+    <!-- Menu Mobile Expandido -->
     <div id="mobileMenu" class="hidden md:hidden mt-4 pb-4 border-t border-gray-200">
-     <div class="flex flex-col space-y-4 pt-4"><a href="#projeto" class="text-gray-600 hover:text-indigo-600 transition-colors">Projeto</a> <a href="#funcionalidades" class="text-gray-600 hover:text-indigo-600 transition-colors">Funcionalidades</a> <a href="#tecnologias" class="text-gray-600 hover:text-indigo-600 transition-colors">Tecnologias</a> <a href="#contato" class="text-gray-600 hover:text-indigo-600 transition-colors">Contato</a> <button onclick="abrirLogin()" class="bg-indigo-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors w-full"> Login </button>
+     <div class="flex flex-col space-y-4 pt-4">
+        <a href="#projeto" class="text-gray-600 hover:text-indigo-600 transition-colors">Projeto</a> 
+        <a href="#funcionalidades" class="text-gray-600 hover:text-indigo-600 transition-colors">Funcionalidades</a> 
+        <a href="#tecnologias" class="text-gray-600 hover:text-indigo-600 transition-colors">Tecnologias</a> 
+        <a href="#contato" class="text-gray-600 hover:text-indigo-600 transition-colors">Contato</a> 
+        <button onclick="abrirLoginFacial()" class="bg-indigo-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors w-full"> Login Facial </button>
      </div>
     </div>
    </div>
+  </header>
 
     <!-- Hero Section -->
     <section class="bg-white py-16">
@@ -44,16 +66,8 @@
                 </h2>
                 <h3 class="text-2xl text-gray-600 mb-6">Gestão de Matéria-Prima</h3>
                 <p class="text-lg text-gray-600 mb-8 leading-relaxed">
-                    Sistema de controle de estoque com código de barras para otimizar a gestão de matérias-primas da empresa Amemiya.
+                    Sistema de controle de estoque com código de barras e reconhecimento facial para otimizar a gestão de matérias-primas da empresa Amemiya.
                 </p>
-                <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                    <button class="bg-indigo-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-indigo-700 transition-colors">
-                        Ver Demonstração
-                    </button>
-                    <button class="border border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors">
-                        Documentação
-                    </button>
-                </div>
             </div>
         </div>
     </section>
@@ -72,32 +86,23 @@
                         </p>
                         <ul class="space-y-3">
                             <li class="flex items-center text-gray-700">
-                                <svg class="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                                </svg>
+                                <svg class="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
                                 Controle em tempo real
                             </li>
                             <li class="flex items-center text-gray-700">
-                                <svg class="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                                </svg>
-                                Interface intuitiva
+                                <svg class="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                Interface intuitiva e segura
                             </li>
                             <li class="flex items-center text-gray-700">
-                                <svg class="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                                </svg>
-                                Relatórios de Materias-Prima
+                                <svg class="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                Relatórios de Matéria-Prima
                             </li>
                         </ul>
                     </div>
                     <div class="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl p-8 text-white">
                         <div class="text-center">
                             <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4">
-                                <svg class="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 18l6-6-6-6" />
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 6l-6 6 6 6" />
-                                </svg>
+                                <svg class="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 18l6-6-6-6" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 6l-6 6 6 6" /></svg>
                             </div>
                             <h4 class="text-xl font-semibold mb-2">Sistema em Implantação</h4>
                             <p class="text-indigo-200">Solução completa em produção na Amemiya</p>
@@ -114,51 +119,20 @@
             <h2 class="text-3xl font-bold text-gray-800 text-center mb-12">Principais Funcionalidades</h2>
             <div class="max-w-4xl mx-auto grid md:grid-cols-2 gap-6">
                 <div class="bg-gray-50 rounded-lg p-6 card-hover">
-                    <div class="flex items-center mb-4">
-                        <div class="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center mr-4">
-                            <svg class="w-5 h-5 text-indigo-600" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M3 4h18v2H3V4zm0 4h18v2H3V8zm0 4h18v2H3v-2zm0 4h18v2H3v-2z"/>
-                            </svg>
-                        </div>
-                        <h3 class="text-lg font-semibold text-gray-800">Código de Barras</h3>
-                    </div>
+                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Código de Barras</h3>
                     <p class="text-gray-600">Leitura e geração automática de códigos para identificação rápida de produtos e lotes.</p>
                 </div>
-
                 <div class="bg-gray-50 rounded-lg p-6 card-hover">
-                    <div class="flex items-center mb-4">
-                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
-                            <svg class="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
-                            </svg>
-                        </div>
-                        <h3 class="text-lg font-semibold text-gray-800">Controle de Estoque</h3>
-                    </div>
-                    <p class="text-gray-600">Monitoramento em tempo real com alertas de reposição e níveis mínimos.</p>
+                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Controle de Estoque</h3>
+                    <p class="text-gray-600">Monitoramento em tempo real com rastreabilidade completa do ciclo do material.</p>
                 </div>
-
                 <div class="bg-gray-50 rounded-lg p-6 card-hover">
-                    <div class="flex items-center mb-4">
-                        <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-4">
-                            <svg class="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 2 2h16c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
-                            </svg>
-                        </div>
-                        <h3 class="text-lg font-semibold text-gray-800">Relatórios Gerenciais</h3>
-                    </div>
-                    <p class="text-gray-600">Relatórios de movimentação, consumo e previsão de demanda.</p>
+                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Relatórios Gerenciais</h3>
+                    <p class="text-gray-600">Dashboard com KPIs de consumo, composição de estoque e movimentações.</p>
                 </div>
-
                 <div class="bg-gray-50 rounded-lg p-6 card-hover">
-                    <div class="flex items-center mb-4">
-                        <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-4">
-                            <svg class="w-5 h-5 text-purple-600" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                            </svg>
-                        </div>
-                        <h3 class="text-lg font-semibold text-gray-800">Controle de Qualidade</h3>
-                    </div>
-                    <p class="text-gray-600">Rastreabilidade completa com controle de lotes, comparação e histórico da Matéria-Prima.</p>
+                    <h3 class="text-lg font-semibold text-gray-800 mb-2">Controle de Qualidade</h3>
+                    <p class="text-gray-600">Processo de identificação de material antes do envio para a produção.</p>
                 </div>
             </div>
         </div>
@@ -169,161 +143,120 @@
         <div class="container mx-auto px-6">
             <h2 class="text-3xl font-bold text-gray-800 text-center mb-12">Tecnologias Utilizadas</h2>
             <div class="max-w-4xl mx-auto">
-                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <div class="text-center">
-                        <div class="w-16 h-16 rounded-lg flex items-center justify-center mx-auto mb-4">
-                            <img src="assets/img/js01-svgrepo-com.svg" alt="JavaScript" class="w-full h-full object-contain rounded-lg">
-                        </div>
-                        <h4 class="font-semibold text-gray-800">JavaScript</h4>
-                        <p class="text-gray-600 text-sm">Frontend & Backend</p>
-                    </div>
-                    <div class="text-center">
-                        <div class="w-16 h-16 rounded-lg flex items-center justify-center mx-auto mb-4">
-                            <img src="assets/img/mysql-svgrepo-com.svg" alt="SQL" class="w-full h-full object-contain rounded-lg">
-                        </div>
-                        <h4 class="font-semibold text-gray-800">Database</h4>
-                        <p class="text-gray-600 text-sm">MySQL</p>
-                    </div>
-                    <div class="text-center">
-                        <div class="w-16 h-16 rounded-lg flex items-center justify-center mx-auto mb-4">
-                            <img src="assets/img/node-js-svgrepo-com.svg" alt="Node.js" class="w-full h-full object-contain rounded-lg">
-                        </div>
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    <div class="text-center p-4">
+                        <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nodejs/nodejs-original.svg" alt="Node.js" class="h-16 mx-auto mb-2"/>
                         <h4 class="font-semibold text-gray-800">Node.js</h4>
-                        <p class="text-gray-600 text-sm">Runtime Environment</p>
                     </div>
-                    <div class="text-center">
-                        <div class="w-16 h-16 rounded-lg flex items-center justify-center mx-auto mb-4">
-                            <img src="assets/img/react-16-svgrepo-com.svg" alt="React" class="w-full h-full object-contain rounded-lg">
-                        </div>
-                        <h4 class="font-semibold text-gray-800">React</h4>
-                        <p class="text-gray-600 text-sm">Interface de Usuário</p>
+                    <div class="text-center p-4">
+                        <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/express/express-original.svg" alt="Express" class="h-16 mx-auto mb-2"/>
+                        <h4 class="font-semibold text-gray-800">Express.js</h4>
+                    </div>
+                     <div class="text-center p-4">
+                        <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/mysql/mysql-original-wordmark.svg" alt="MySQL" class="h-16 mx-auto mb-2"/>
+                        <h4 class="font-semibold text-gray-800">MySQL</h4>
+                    </div>
+                    <div class="text-center p-4">
+                        <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/tailwindcss/tailwindcss-plain.svg" alt="Tailwind CSS" class="h-16 mx-auto mb-2"/>
+                        <h4 class="font-semibold text-gray-800">Tailwind CSS</h4>
                     </div>
                 </div>
-    
             </div>
         </div>
     </section>
 
-<!-- Estatísticas -->
-<section class="py-16 bg-indigo-600">
-    <div class="container mx-auto px-6">
-        <h2 class="text-2xl font-bold text-white text-center mb-12">Resultados Esperados com a Implantação</h2>
-        <div id="statsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 text-center">
-            
-            <div class="bg-white bg-opacity-10 rounded-lg p-6">
-                <div class="text-3xl font-bold text-white mb-2">+50%</div>
-                <div class="text-indigo-200">Agilidade no Recebimento</div>
-            </div>
-
-            <div class="bg-white bg-opacity-10 rounded-lg p-6">
-                <div class="text-3xl font-bold text-white mb-2">-30%</div>
-                <div class="text-indigo-200">Redução de Perdas</div>
-            </div>
-            
-            <div class="bg-white bg-opacity-10 rounded-lg p-6">
-                <div class="text-3xl font-bold text-white mb-2">99%</div>
-                <div class="text-indigo-200">Acuracidade do Estoque</div>
-            </div>
-
-            <div class="bg-white bg-opacity-10 rounded-lg p-6">
-                <div class="text-3xl font-bold text-white mb-2">100%</div>
-                <div class="text-indigo-200">Rastreabilidade de Lotes</div>
-            </div>
-
-        </div>
-    </div>
-</section>
-
-<!-- Contato -->
-<section id="contato" class="py-16 bg-white">
-    <div class="container mx-auto px-6">
-        <div class="max-w-2xl mx-auto text-center">
-            <h2 class="text-3xl font-bold text-gray-800 mb-6">Entre em Contato</h2>
-            <p class="text-gray-600 mb-8">
-                Interessado em conhecer mais sobre o projeto BARCODER'S?
-            </p>
-            <div class="bg-gray-50 rounded-lg p-8">
-                <form id="contactForm" class="space-y-4" action="/api/contact" method="POST">
-                    <div class="grid md:grid-cols-2 gap-4">
-                        <input type="text" name="nome" placeholder="Seu Nome" required 
-                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                        <input type="email" name="email" placeholder="Seu Email" required 
-                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                    </div>
-                    <input type="text" name="assunto" placeholder="Assunto" required 
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
-                    <textarea name="mensagem" placeholder="Sua Mensagem" rows="4" required 
-                              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"></textarea>
-                    <input type="hidden" name="data_envio" id="dataEnvio">
-                    <input type="hidden" name="projeto" value="BARCODER'S">
-                    <button type="submit" id="submitBtn"
-                            class="w-full bg-indigo-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-indigo-700 transition-colors">
-                        Enviar Mensagem
-                    </button>
-                </form>
-                <div id="successMessage" class="hidden mt-4 p-4 bg-green-100 text-green-700 rounded-lg">
-                    Mensagem enviada com sucesso! Entraremos em contato em breve.
-                </div>
-                <div id="errorMessage" class="hidden mt-4 p-4 bg-red-100 text-red-700 rounded-lg">
-                    Erro ao enviar mensagem. Tente novamente.
+    <!-- Contato -->
+    <section id="contato" class="py-16 bg-white">
+        <div class="container mx-auto px-6">
+            <div class="max-w-2xl mx-auto text-center">
+                <h2 class="text-3xl font-bold text-gray-800 mb-6">Entre em Contato</h2>
+                <p class="text-gray-600 mb-8">Interessado em conhecer mais sobre o projeto BARCODER'S?</p>
+                <div class="bg-gray-50 rounded-lg p-8">
+                    <form id="contactForm">
+                        <div class="grid md:grid-cols-2 gap-4 mb-4">
+                            <input type="text" name="nome" placeholder="Seu Nome" required class="w-full px-4 py-3 border rounded-lg">
+                            <input type="email" name="email" placeholder="Seu Email" required class="w-full px-4 py-3 border rounded-lg">
+                        </div>
+                        <input type="text" name="assunto" placeholder="Assunto" required class="w-full px-4 py-3 border rounded-lg mb-4">
+                        <textarea name="mensagem" placeholder="Sua Mensagem" rows="4" required class="w-full px-4 py-3 border rounded-lg mb-4"></textarea>
+                        <input type="hidden" name="data_envio" id="dataEnvio">
+                        <input type="hidden" name="projeto" value="BARCODER'S">
+                        <button type="submit" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-medium">Enviar Mensagem</button>
+                    </form>
+                    <div id="successMessage" class="hidden mt-4 p-4 bg-green-100 text-green-700 rounded-lg">Mensagem enviada!</div>
+                    <div id="errorMessage" class="hidden mt-4 p-4 bg-red-100 text-red-700 rounded-lg">Erro ao enviar.</div>
                 </div>
             </div>
         </div>
-    </div>
-</section>
+    </section>
 
-    <!-- Login Modal -->
-    <div id="loginModal" class="fixed inset-0 bg-gray-800 bg-opacity-75 flex items-center justify-center hidden">
-        <div class="bg-white rounded-lg p-8 max-w-sm w-full">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold text-gray-800">Login</h2>
-                <button id="closeModal" class="text-gray-500 hover:text-gray-700">&times;</button>
-            </div>
-            <form id="loginForm">
-                <div class="mb-4">
-                    <label for="email" class="block text-gray-700 mb-2">Email</label>
-                    <input type="email" id="email" name="email" required
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+    <!-- Modal de Login Facial (NOVO) -->
+    <div id="facialLoginModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white p-8 rounded-lg shadow-xl max-w-md w-full mx-4 relative">
+            <button onclick="fecharLoginFacial()" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Login Facial</h2>
+            <div class="space-y-4">
+                <input type="number" id="employeeId" placeholder="Digite seu ID de Funcionário" class="w-full px-4 py-3 border border-gray-300 rounded-lg" min="1">
+                <button id="startFacialBtn" onclick="iniciarLoginFacial()" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-medium disabled:bg-gray-400" disabled>Iniciar Reconhecimento</button>
+                <div id="cameraSection" class="hidden">
+                    <video id="video" width="100%" height="240" autoplay muted playsinline class="rounded-lg border"></video>
+                    <canvas id="canvas" class="hidden"></canvas>
+                    <p id="status" class="text-center text-sm text-gray-600 mt-2">Posicione seu rosto na câmera...</p>
+                    <button id="captureBtn" class="w-full bg-green-600 text-white py-2 rounded-lg font-medium mt-4">Capturar Rosto</button>
                 </div>
-                <div class="mb-6">
-                    <label for="password" class="block text-gray-700 mb-2">Senha</label>
-                    <input type="password" id="password" name="password" required
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                <div id="result" class="hidden text-center">
+                    <p id="successMsg" class="text-green-600 hidden"></p>
+                    <p id="errorMsg" class="text-red-600 hidden"></p>
                 </div>
-                <button type="submit"
-                        class="w-full bg-indigo-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-indigo-700 transition-colors">
-                    Entrar
-                </button>
-            </form>
-            <div id="loginErrorMessage" class="hidden mt-4 p-4 bg-red-100 text-red-700 rounded-lg">
-                Email ou senha inválidos.
             </div>
-        </div>
+        </div>a
     </div>
 
     <!-- Footer -->
     <footer class="bg-gray-100 py-8">
         <div class="container mx-auto px-6 text-center">
-            <div class="text-gray-600">
-                © 2025 BARCODER'S - Sistema de Gestão de Estoque para Amemiya
-            </div>
+            <p class="text-gray-600">© 2025 BARCODER'S - Sistema de Gestão de Estoque para Amemiya</p>
         </div>
     </footer>
 
   <script>
+    // Funções globais para abrir/fechar modal de login facial
+    window.abrirLoginFacial = function() {
+      document.getElementById('facialLoginModal').classList.remove('hidden');
+      document.getElementById('employeeId').focus();
+    };
+    window.fecharLoginFacial = function() {
+      const video = document.getElementById('video');
+      if (video && video.srcObject) {
+        video.srcObject.getTracks().forEach(track => track.stop());
+      }
+      document.getElementById('facialLoginModal').classList.add('hidden');
+      document.getElementById('employeeId').value = '';
+      document.getElementById('startFacialBtn').disabled = true;
+      document.getElementById('cameraSection').classList.add('hidden');
+      document.getElementById('result').classList.add('hidden');
+    };
+    
+    // Toggle menu mobile
+    window.toggleMobileMenu = function() {
+      document.getElementById('mobileMenu').classList.toggle('hidden');
+    };
+
     document.addEventListener('DOMContentLoaded', function () {
-      // Contato
+      // Ativa botão de login facial após digitar ID
+      document.getElementById('employeeId').addEventListener('input', (e) => {
+        document.getElementById('startFacialBtn').disabled = e.target.value.length === 0;
+      });
+
+      // Lógica do Formulário de Contato
       const form = document.getElementById('contactForm');
       if (form) {
         form.addEventListener('submit', async function (e) {
           e.preventDefault();
-          // Adiciona data_envio automática
           document.getElementById('dataEnvio').value = new Date().toISOString();
-          // Envia como JSON
           const formData = Object.fromEntries(new FormData(form));
-          const endpoint = typeof API_ENDPOINT !== 'undefined' ? `${API_ENDPOINT}/api/contact` : '/api/contact';
           try {
-            const response = await fetch(endpoint, {
+            const response = await fetch('/api/contact', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(formData)
@@ -333,64 +266,14 @@
               document.getElementById('errorMessage').classList.add('hidden');
               form.reset();
             } else {
-              document.getElementById('successMessage').classList.add('hidden');
-              document.getElementById('errorMessage').classList.remove('hidden');
+              throw new Error('Falha no envio');
             }
-          } catch {
+          } catch (error) {
             document.getElementById('successMessage').classList.add('hidden');
             document.getElementById('errorMessage').classList.remove('hidden');
           }
         });
       }
-
-      // Login Modal abrir/fechar
-      window.abrirLogin = function() {
-        document.getElementById('loginModal').classList.remove('hidden');
-        document.getElementById('loginErrorMessage').classList.add('hidden');
-      };
-      const closeModalBtn = document.getElementById('closeModal');
-      if (closeModalBtn) {
-        closeModalBtn.onclick = function() {
-          document.getElementById('loginModal').classList.add('hidden');
-        };
-      }
-
-      // Login form handler
-      const loginForm = document.getElementById('loginForm');
-      if (loginForm) {
-        loginForm.addEventListener('submit', async function (e) {
-          e.preventDefault();
-          const email = document.getElementById('email').value;
-          const password = document.getElementById('password').value;
-          const endpoint = typeof API_ENDPOINT !== 'undefined' ? `${API_ENDPOINT}/api/login` : '/api/login';
-          try {
-            const response = await fetch(endpoint, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ email, password })
-            });
-            if (response.ok) {
-              document.getElementById('loginErrorMessage').classList.add('hidden');
-              document.getElementById('loginModal').classList.add('hidden');
-              window.location.href = '/admin'; // Redireciona para a tela de admin
-            } else {
-              document.getElementById('loginErrorMessage').classList.remove('hidden');
-            }
-          } catch {
-            document.getElementById('loginErrorMessage').classList.remove('hidden');
-          }
-        });
-      }
-
-      // Toggle menu mobile
-      window.toggleMobileMenu = function() {
-        const menu = document.getElementById('mobileMenu');
-        if (menu.classList.contains('hidden')) {
-          menu.classList.remove('hidden');
-        } else {
-          menu.classList.add('hidden');
-        }
-      };
     });
   </script>
 </body>

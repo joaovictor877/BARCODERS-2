@@ -1,5 +1,3 @@
-<!-- views/gestao.ejs -->
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -7,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard de Gestão</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Biblioteca de Gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-gray-100">
@@ -16,7 +15,7 @@
             <a href="/lobby" class="text-indigo-600 hover:text-indigo-800">&larr; Voltar ao Lobby</a>
         </div>
 
-        <!-- KPIs ATUALIZADOS -->
+        <!-- KPIs (Key Performance Indicators) -->
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-6 mb-8">
             <div class="bg-white p-6 rounded-lg shadow-md"><h3 class="text-gray-500">Lotes em Estoque</h3><p id="kpi-total-stock" class="text-3xl font-bold">...</p></div>
             <div class="bg-white p-6 rounded-lg shadow-md"><h3 class="text-gray-500">Aguardando Identificação</h3><p id="kpi-awaiting-id" class="text-3xl font-bold text-yellow-600">...</p></div>
@@ -38,15 +37,40 @@
                     <canvas id="consumptionChart"></canvas>
                 </div>
             </div>
-            <!-- Coluna Direita com Tabelas -->
+            <!-- Coluna Direita com Tabelas de Atividades Recentes -->
             <div class="lg:col-span-2 space-y-8">
                 <div class="bg-white p-6 rounded-lg shadow-md">
                     <h3 class="text-xl font-semibold mb-4">Últimas Entradas</h3>
-                    <table class="w-full text-sm text-left"><thead class="text-xs text-gray-700 uppercase bg-gray-50"><tr><th class="px-4 py-2">Data</th><th class="px-4 py-2">Lote</th><th class="px-4 py-2">Registrado por</th></tr></thead><tbody id="recent-entries-body"></tbody></table>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-2">Data</th>
+                                    <th class="px-4 py-2">Lote</th>
+                                    <th class="px-4 py-2">Registrado por</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recent-entries-body"></tbody>
+                        </table>
+                    </div>
                 </div>
                 <div class="bg-white p-6 rounded-lg shadow-md">
                     <h3 class="text-xl font-semibold mb-4">Últimas Movimentações</h3>
-                    <table class="w-full text-sm text-left"><thead class="text-xs text-gray-700 uppercase bg-gray-50"><tr><th class="px-4 py-2">Data</th><th class="px-4 py-2">Lote</th><th class="px-4 py-2 text-center">Qtd.</th><th class="px-4 py-2">Máquina</th></tr></thead><tbody id="recent-movements-body"></tbody></table>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-2">Data</th>
+                                    <th class="px-4 py-2">Lote</th>
+                                    <th class="px-4 py-2 text-center">Qtd.</th>
+                                    <th class="px-4 py-2">Máquina</th>
+                                    <!-- COLUNA ADICIONADA -->
+                                    <th class="px-4 py-2">Funcionário</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recent-movements-body"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>

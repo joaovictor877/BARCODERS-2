@@ -1,0 +1,241 @@
+body {
+            font-family: Arial, Helvetica, sans-serif;
+            background-color: #f0f0f0;
+            display: flex;
+            flex-direction: column; 
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+        }
+
+        /* --- Estilo do Botão --- */
+        #imprimir-btn {
+            font-size: 18px;
+            padding: 12px 25px;
+            margin-bottom: 20px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        #imprimir-btn:hover {
+            background-color: #0056b3;
+        }
+
+        /* --- O Contêiner Principal da Folha --- */
+        .sheet-container {
+            width: 900px;
+            border: 2px solid #000;
+            background-color: #fff;
+            padding: 10px;
+            display: grid;
+            grid-template-rows: auto auto 1fr auto; 
+            gap: 0;
+            box-sizing: border-box; 
+            page-break-inside: avoid;
+        }
+
+        /* --- 1. Cabeçalho (Logo, Título, ID) --- */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #000;
+            padding-bottom: 5px;
+        }
+        .header .logo { font-weight: bold; font-size: 1.2em; }
+        .header h1 { font-size: 1.8em; font-weight: bold; margin: 0; padding: 0; }
+        .header .form-id { font-size: 0.8em; font-weight: bold; }
+
+        /* --- 2. Informações do Material (Fornecedor, etc) --- */
+        .material-info {
+            display: flex;
+            border-bottom: 2px solid #000;
+        }
+        .material-info .field {
+            padding: 5px 8px;
+            border-right: 1px solid #000;
+            white-space: nowrap; 
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex: 1;
+        }
+        .material-info .field:last-child { border-right: none; }
+        .material-info .label {
+            display: block;
+            font-size: 0.7em;
+            font-weight: bold;
+            color: #333;
+            text-transform: uppercase;
+        }
+        .material-info .value { font-size: 1.1em; font-weight: bold; }
+        .material-info .field-fornecedor { flex-basis: 25%; }
+        .material-info .field-denominacao { flex-basis: 50%; }
+        .material-info .field-codpeca { flex-basis: 25%; }
+
+        
+        /* --- 3. Corpo Principal (ITEM e DADOS) --- */
+        .main-body {
+            display: grid;
+            grid-template-columns: 40px 1fr; 
+            grid-template-rows: auto auto; 
+            border-bottom: 2px solid #000;
+        }
+
+        .vertical-label-cell {
+            border-right: 2px solid #000; 
+            display: flex; 
+            align-items: center;
+            justify-content: center;
+            writing-mode: vertical-lr; /* Mudança para melhor suporte em print */
+            height: 100%;
+        }
+        
+        .vertical-label {
+            transform: rotate(180deg);
+            text-align: center;
+            font-weight: bold;
+            font-size: 0.8em; /* Reduzido ligeiramente para evitar overflow */
+            text-transform: uppercase;
+            padding: 5px 0; /* Reduzido padding */
+            letter-spacing: 0.5px; /* Reduzido para compactar */
+            white-space: nowrap; 
+            line-height: 1;
+        }
+        
+        .item-label-cell {
+            border-bottom: 1px solid #000; 
+        }
+        
+        .item-content-cell {
+            border-bottom: 1px solid #000; 
+            text-align: center;
+            font-size: 4.5em; 
+            font-weight: bold;
+            padding: 20px 0;
+            box-sizing: border-box; 
+        }
+
+        .data-content-cell {
+            /* Esta célula apenas segura o grid .receiving-data */
+        }
+
+        .receiving-data {
+            display: grid;
+            grid-template-rows: auto auto; 
+        }
+        .receiving-data .row { display: flex; }
+        .receiving-data .row-1 { border-bottom: 1px solid #000; }
+        .receiving-data .row .field {
+            padding: 5px 8px;
+            border-right: 1px solid #000;
+            white-space: nowrap; 
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-width: 0; /* Permite shrink se necessário */
+        }
+        .receiving-data .row .field:last-child { border-right: none; }
+        .receiving-data .label {
+            display: block;
+            font-size: 0.7em;
+            font-weight: bold;
+            color: #333;
+            text-transform: uppercase;
+        }
+        .receiving-data .value { 
+            font-size: 1.1em; 
+            font-weight: bold; 
+            white-space: nowrap; /* Força não-quebra no valor */
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .receiving-data .field-rec { flex-basis: 20%; } /* Ajustado para mais espaço */
+        .receiving-data .field-data-rec { flex-basis: 15%; }
+        .receiving-data .field-qtd-kg { 
+            flex-basis: 40%; /* Aumentado para acomodar "100000 PÇ" sem quebra */
+        } 
+        .receiving-data .field-amarrados { flex-basis: 15%; }
+        .receiving-data .field-corrida { flex-basis: 20%; }
+        .receiving-data .field-obs { flex-grow: 1; }
+
+        /* --- 4. Número do Lote --- */
+        .lot-section {
+            display: grid;
+            grid-template-columns: 40px 1fr; 
+        }
+        
+        .lot-number-box { 
+            text-align: center; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+        }
+        .lot-number-box .not-applicable {
+            font-size: 1.2em;
+            font-weight: bold;
+            padding: 10px;
+            border-bottom: 1px solid #000;
+            width: 100%;
+            text-align: center;
+        }
+        .lot-number-box .lot-number {
+            padding: 10px 0 20px 0;
+            line-height: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            max-width: 250px; /* Reduzido para compactar */
+        }
+
+        .lot-number-box .lot-number svg {
+            display: block;
+            margin: 0 auto;
+            max-width: 100%;
+            height: auto;
+        }
+
+        /* --- 5. Rodapé (ID do Formulário) --- */
+        .footer-id {
+            text-align: right;
+            font-size: 0.8em;
+            font-weight: bold;
+            padding-top: 5px;
+            grid-row: 5 / span 1; 
+        }
+
+        /* --- Estilos para Impressão --- */
+        @media print {
+            body {
+                background-color: white;
+                padding: 0;
+                margin: 0;
+            }
+            #imprimir-btn {
+                display: none; /* Esconde o botão na impressão */
+            }
+            .sheet-container {
+                width: 100%;
+                max-width: none;
+                border: 2px solid #000;
+                box-shadow: none;
+                page-break-after: avoid;
+            }
+            .vertical-label-cell {
+                writing-mode: vertical-lr;
+                -webkit-writing-mode: vertical-lr; /* Suporte para WebKit */
+            }
+            .vertical-label {
+                transform: rotate(180deg);
+                -webkit-transform: rotate(180deg);
+            }
+            /* Força não-quebra em valores críticos */
+            .receiving-data .value {
+                word-break: normal;
+                hyphens: none;
+            }
+        }

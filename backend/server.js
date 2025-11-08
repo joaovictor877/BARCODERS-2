@@ -1,5 +1,7 @@
 // backend/server.js
-
+import puppeteer from 'puppeteer';
+import bwipjs from 'bwip-js';
+import fs from 'fs/promises';
 import express from 'express';
 import cors from 'cors';
 import multer from 'multer';
@@ -24,7 +26,7 @@ app.set('views', path.join(projectRoot, 'views'));
 
 // Middleware para proteger rotas DE ADMIN
 const requireAdmin = (req, res, next) => {
-  if (req.session.nivelAcesso !== 'Total') {
+  if (req.session.NivelAcesso !== 'Total') {
     return res.status(403).redirect('/lobby'); 
   }
   next();
@@ -55,7 +57,33 @@ const requireLogin = (req, res, next) => {
 };
 
 
+
 // --- ROTAS DA APLICAÇÃO ---
+
+
+//Login facial 
+app.post('/api/login-facial', async (req, res) => {
+    const { id } = req.body;
+    try {
+        const [rows] = await pool.query(
+            'SELECT IDFuncionario, Nome, NivelAcesso, Cargo FROM Funcionarios WHERE IDFuncionario  = ?',
+            [id]
+        );
+        if (rows.length === 0) {
+            return res.status(404).json({ message: 'Funcionário não encontrado.' });
+        }
+        const funcionario = rows[0];
+        // Cria session
+        req.session.userId = funcionario.IDFuncionario ;
+        req.session.NivelAcesso = funcionario.NivelAcesso;
+        req.session.cargo = funcionario.Cargo;
+        req.session.nome = funcionario.Nome;
+        res.json({ success: true, message: 'Login realizado com sucesso!', redirect: '/lobby' });
+    } catch (error) {
+        console.error('Erro no login facial:', error);
+        res.status(500).json({ message: 'Erro interno no login.' });
+    }
+});
 
 // Rota da página inicial
 app.get('/', (req, res) => {
@@ -65,35 +93,39 @@ app.get('/', (req, res) => {
 
 // Rota do Lobby (protegida)
 app.get('/lobby', requireLogin, (req, res) => {
-  const { nivelAcesso, cargo, nome } = req.session;
+  const { NivelAcesso, cargo, nome } = req.session;
   let linksPermitidos = [];
 
   // Usando 'if / else if' para garantir que apenas um bloco de permissão seja executado
-  if (nivelAcesso === 'Total') {
+  if (NivelAcesso === 'Total') {
     // Nível Total (Admin) tem acesso a tudo.
     linksPermitidos.push({ nome: 'Painel do Administrador', url: '/admin' });
     linksPermitidos.push({ nome: 'Dashboard de Gestão', url: '/gestao' });
     linksPermitidos.push({ nome: 'Controle de Recebimento', url: '/recebimento' });
     linksPermitidos.push({ nome: 'Identificação de Material', url: '/qualidade' });
     linksPermitidos.push({ nome: 'Movimentação de Material', url: '/movimentacao' });
+    linksPermitidos.push({ nome: 'Dashboard de Funcionários', url: '/dashboard-funcionario' });
+
   
-  } else if (nivelAcesso === 'Gestor') {
+  } else if (NivelAcesso === 'Gestor') {
     // Nível Gestor tem acesso a dashboards e pode ter acesso a outras telas no futuro.
     if (cargo === 'Gerente de Produção') {
       linksPermitidos.push({ nome: 'Dashboard de Gestão', url: '/gestao' });
+      linksPermitidos.push({ nome: 'Dashboard de Funcionários', url: '/dashboard-funcionario' });
+
     }
-  
-  } else if (nivelAcesso === 'Usuario') {
-    // Nível Usuário tem acesso apenas às suas telas operacionais específicas.
-    if (cargo === 'Conferente') {
-      linksPermitidos.push({ nome: 'Controle de Recebimento', url: '/recebimento' });
-    }
-    if (cargo === 'Inspetor de Qualidade') {
-      linksPermitidos.push({ nome: 'Identificação de Material', url: '/qualidade' });
-    }
-    if (cargo === 'Alimentador de Linha') {
-      linksPermitidos.push({ nome: 'Movimentação de Material', url: '/movimentacao' });
-    }
+    }else if (NivelAcesso === 'Usuario') {
+        // Nível Usuário tem acesso apenas às suas telas operacionais específicas.
+        if (cargo === 'Conferente') {
+        linksPermitidos.push({ nome: 'Controle de Recebimento', url: '/recebimento' });
+        }
+        if (cargo === 'Inspetor de Qualidade') {
+        linksPermitidos.push({ nome: 'Identificação de Material', url: '/qualidade' });
+        }
+        if (cargo === 'Alimentador de Linha') {
+        linksPermitidos.push({ nome: 'Movimentação de Material', url: '/movimentacao' });
+        }
+    
   }
 
   res.render('lobby', { nome, links: linksPermitidos });
@@ -147,50 +179,112 @@ app.get('/gestao', requireLogin, (req, res) => {
     res.render('gestao');
 });
 
-// Endpoint para REGISTRAR a entrada de material
-app.post('/api/recebimento', requireLogin, async (req, res) => {
-    // 1. O 'tipoMP' foi REMOVIDO do corpo da requisição.
-    const { fornecedorCnpj, quantidade, codigoLote } = req.body;
-    const funcionarioId = req.session.userId;
-    
-    if (!fornecedorCnpj || !quantidade || !codigoLote) {
-        return res.status(400).json({ success: false, message: 'Todos os campos são obrigatórios.' });
+// Rota para buscar funcionário por ID (pública para login facial)
+app.get('/api/funcionario/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const [rows] = await pool.query(
+            'SELECT IDFuncionario, Nome, Foto, Face_Embedding, Email, CPF, Cargo, NivelAcesso FROM Funcionarios WHERE IDFuncionario = ?',
+            [id]
+        );
+        if (rows.length === 0) {
+            return res.status(404).json({ message: 'Funcionário não encontrado.' });
+        }
+        const funcionario = rows[0];
+        // Converte Foto BLOB para base64 se existir
+        if (funcionario.Foto) {
+            funcionario.fotoBase64 = `data:image/jpeg;base64,${Buffer.from(funcionario.Foto).toString('base64')}`;
+        }
+        // Converte Face_Embedding TEXT para array
+        if (funcionario.Face_Embedding) {
+            funcionario.face_embedding = JSON.parse(funcionario.Face_Embedding);
+        }
+        res.json({ funcionario });
+    } catch (error) {
+        console.error('Erro ao buscar funcionário:', error);
+        res.status(500).json({ message: 'Erro interno ao buscar dados.' });
     }
+});
+// ROTA PARA O RECEBIMENTO: Buscar berços e prateleiras disponíveis
+app.get('/api/bercos/disponiveis', requireLogin, async (req, res) => {
+    try {
+        const [bercos] = await pool.query('SELECT * FROM Bercos');
+        const disponiveis = bercos.map(berco => {
+            const prateleirasLivres = [];
+            for (let letra of 'ABCDEFGHIJ') {
+                if (berco[`Prateleira_${letra}`] === null) {
+                    prateleirasLivres.push(letra);
+                }
+            }
+            return { id: berco.ID, nome: berco.Nome, prateleirasLivres };
+        });
+        res.json({ success: true, bercos: disponiveis });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Erro ao buscar berços.' });
+    }
+});
 
+// ROTA PARA O DASHBOARD DE FUNCIONÁRIOS (PROTEGIDA)
+
+app.get('/dashboard-funcionario', requireLogin, async (req, res) => {
+    // Apenas Admins e Gestores podem acessar esta página
+    if (req.session.NivelAcesso !== 'Total' && req.session.NivelAcesso !== 'Gestor') {
+        return res.status(403).redirect('/lobby');
+    }
+    try {
+        // Busca todos os funcionários para popular o menu de seleção
+        const [employees] = await pool.query('SELECT IDFuncionario, Nome, Cargo FROM Funcionarios ORDER BY Nome');
+        res.render('dashboard-funcionario', { employees });
+    } catch (error) {
+        res.status(500).render('dashboard-funcionario', { employees: [] });
+    }
+});
+
+// 2. ROTA PARA O RECEBIMENTO: Registrar entrada inicial e gerar código de barras
+app.post('/api/recebimento/registrar', requireLogin, async (req, res) => {
+    const { fornecedorCnpj, bercoId, prateleira } = req.body;
     let connection;
     try {
+        // Gera o código de lote
+        const anoAtual = new Date().getFullYear();
+        const padraoBusca = `%/${anoAtual % 100}`;
+        const [rows] = await pool.query(
+            `SELECT BarCode FROM Estoque_MP WHERE BarCode LIKE ? ORDER BY CAST(SUBSTRING_INDEX(BarCode, '/', 1) AS UNSIGNED) DESC LIMIT 1`,
+            [padraoBusca]
+        );
+        let proximoNumero = 1;
+        if (rows.length > 0) {
+            proximoNumero = parseInt(rows[0].BarCode.split('/')[0]) + 1;
+        }
+        const codigoLote = `${proximoNumero}/${anoAtual % 100}`;
+
         connection = await pool.getConnection();
         await connection.beginTransaction();
 
-        // ETAPA 1: Inserir na tabela de estoque com um tipo padrão.
-        // O material será identificado posteriormente pela equipe de Qualidade.
-        const sqlEstoque = `
-            INSERT INTO Estoque_MP (BarCode, Quantidade, fk_Tipos_MP_TipoMP, fk_Fornecedores_CNPJ) 
-            VALUES (?, ?, 'Aguardando Identificação', ?) 
-        `;
-        
-        await connection.query(sqlEstoque, [codigoLote, quantidade, fornecedorCnpj]);
+        // Insere um placeholder no estoque
+        await connection.query(
+            `INSERT INTO Estoque_MP (BarCode, fk_Fornecedores_CNPJ, fk_Berco_ID, Prateleira_Ocupada) VALUES (?, ?, ?, ?)`,
+            [codigoLote, fornecedorCnpj, bercoId, prateleira]
+        );
 
-        const sqlRegistro = `
-            INSERT INTO Registro_Entrada_MP (DataHoraRegistro, fk_Estoque_MP_BarCode, fk_Funcionarios_IDFuncionario)
-            VALUES (?, ?, ?)
-        `;
-        await connection.query(sqlRegistro, [new Date(), codigoLote, funcionarioId]);
+        // Ocupa a prateleira no berço
+        const nomeColunaPrateleira = `Prateleira_${prateleira}`;
+        await connection.query(
+            `UPDATE Bercos SET ${nomeColunaPrateleira} = ? WHERE ID = ?`,
+            [codigoLote, bercoId]
+        );
         
         await connection.commit();
-        
-        res.status(201).json({ success: true, message: 'Material registrado com sucesso! Aguardando identificação pela Qualidade.' });
+        res.status(201).json({ success: true, message: 'Entrada registrada! Leve o material para a Qualidade.', codigoLote: codigoLote });
 
     } catch (error) {
         if (connection) await connection.rollback();
-        
-        console.error("Erro na transação de registro de material:", error);
-        res.status(500).json({ success: false, message: 'Erro ao registrar o material. A operação foi cancelada.' });
+        console.error("Erro no registro de recebimento:", error);
+        res.status(500).json({ success: false, message: 'Erro interno.' });
     } finally {
         if (connection) connection.release();
     }
 });
-
 // Endpoint para REGISTRAR a movimentação de material para uma máquina
 app.post('/api/movimentacao', requireLogin, async (req, res) => {
     const { codigoLote, maquinaId, quantidadeMovida } = req.body;
@@ -294,7 +388,7 @@ app.post('/api/login', async (req, res) => {
       const user = rows[0];
       req.session.userId = user.IDFuncionario;
       req.session.nome = user.Nome;
-      req.session.nivelAcesso = user.NivelAcesso;
+      req.session.NivelAcesso = user.NivelAcesso;
       req.session.cargo = user.Cargo;
       req.session.save(err => {
         if (err) return res.status(500).json({ success: false, message: 'Erro ao iniciar a sessão' });
@@ -315,105 +409,353 @@ app.get('/admin', requireLogin, requireAdmin, (req, res) => {
     res.render('admin');
 });
 
-// API para buscar TODOS os dados para o painel de admin
-app.get('/api/admin/data', requireLogin, requireAdmin, async (req, res) => {
+// --- ROTAS DO PAINEL ADMIN (PROTEGIDAS POR requireAdmin) ---
+
+// Listar todos os funcionários (para tabela)
+app.get('/api/admin/employees', requireLogin, requireAdmin, async (req, res) => {
     try {
-        const [employees] = await pool.query('SELECT IDFuncionario, Nome, Email, Cargo, NivelAcesso FROM Funcionarios');
-        const [machines] = await pool.query('SELECT Identificacao, Modelo FROM Maquinas');
-        const [materials] = await pool.query("SELECT TipoMP FROM Tipos_MP WHERE TipoMP != 'Aguardando Identificação'");
-        const [compatibilities] = await pool.query('SELECT fk_Tipos_MP_TipoMP as tipoMP, fk_Maquina_Identificacao as maquinaId FROM Compativel');
-        
-        res.json({ employees, machines, materials, compatibilities });
+        const [rows] = await pool.query(
+            'SELECT IDFuncionario, Nome, Cargo, NivelAcesso FROM Funcionarios'
+        );
+        res.json({ employees: rows });
     } catch (error) {
-        console.error("Erro ao buscar dados de admin:", error);
-        res.status(500).json({ message: "Erro ao carregar dados." });
+        console.error('Erro ao listar funcionários:', error);
+        res.status(500).json({ message: 'Erro ao carregar funcionários.' });
     }
 });
 
-// API para CRUD de Funcionários
-app.post('/api/admin/employees', requireLogin, requireAdmin, async (req, res) => {
-    const { nome, email, cpf, senha, cargo, nivelAcesso } = req.body;
-    
-    // Garante que o CPF salvo no banco não tenha máscara
-    const unmaskedCpf = cpf ? cpf.replace(/\D/g, '') : null;
-
-    if (!nome || !email || !unmaskedCpf || !senha || !cargo || !nivelAcesso) {
-        return res.status(400).json({ success: false, message: 'Todos os campos são obrigatórios.' });
-    }
-
-    try {
-        const sql = 'INSERT INTO Funcionarios (Nome, Email, CPF, Senha, Cargo, NivelAcesso) VALUES (?, ?, ?, ?, ?, ?)';
-        await pool.query(sql, [nome, email, unmaskedCpf, senha, cargo, nivelAcesso]);
-        res.status(201).json({ success: true, message: 'Funcionário criado com sucesso!' });
-    } catch (error) {
-        console.error("Erro ao criar funcionário:", error);
-        if (error.code === 'ER_DUP_ENTRY') {
-            return res.status(409).json({ success: false, message: 'Erro: Email ou CPF já cadastrado no sistema.' });
-        }
-        res.status(500).json({ success: false, message: 'Erro interno ao criar funcionário.' });
-    }
-});
-// APIs para CRUD de Máquinas
-app.post('/api/admin/machines', requireLogin, requireAdmin, async (req, res) => {
-    const { modelo } = req.body;
-    try {
-        await pool.query('INSERT INTO Maquinas (Modelo) VALUES (?)', [modelo]);
-        res.status(201).json({ success: true, message: 'Máquina criada com sucesso!' });
-    } catch (error) {
-        res.status(500).json({ success: false, message: 'Erro ao criar máquina.' });
-    }
-});
-app.put('/api/admin/machines/:id', requireLogin, requireAdmin, async (req, res) => {
-    const { modelo } = req.body;
+// Buscar funcionário por ID (para edição ou login facial)
+app.get('/api/admin/employees/:id', requireLogin, requireAdmin, async (req, res) => {
     const { id } = req.params;
     try {
-        await pool.query('UPDATE Maquinas SET Modelo = ? WHERE Identificacao = ?', [modelo, id]);
-        res.status(200).json({ success: true, message: 'Máquina atualizada com sucesso!' });
+        const [rows] = await pool.query(
+            'SELECT IDFuncionario, Nome, Foto, Face_Embedding, Email, CPF, Cargo, NivelAcesso FROM Funcionarios WHERE IDFuncionario = ?',
+            [id]
+        );
+        if (rows.length === 0) {
+            return res.status(404).json({ message: 'Funcionário não encontrado.' });
+        }
+        const emp = rows[0];
+        // Converte Foto BLOB para base64 se existir
+        if (emp.Foto) {
+            emp.fotoBase64 = `data:image/jpeg;base64,${Buffer.from(emp.Foto).toString('base64')}`;
+        }
+        // Converte Face_Embedding TEXT para array
+        if (emp.Face_Embedding) {
+            emp.face_embedding = JSON.parse(emp.Face_Embedding);
+        }
+        res.json({ employee: emp });
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Erro ao atualizar máquina.' });
+        console.error('Erro ao buscar funcionário:', error);
+        res.status(500).json({ message: 'Erro ao carregar funcionário.' });
     }
 });
 
-// APIs para CRUD de Tipos de Materiais
+// Adicionar ou editar funcionário (POST/PUT)
+app.post('/api/admin/employees', requireLogin, requireAdmin, async (req, res) => {
+    // O nível de acesso é intencionalmente omitido do destructuring,
+    // pois ele será definido de forma segura no backend com base no cargo.
+    const { id, nome, email, cpf, cargo, foto, face_embedding } = req.body;
+
+    // --- Regra de Negócio: Define o Nível de Acesso com base no Cargo ---
+    let nivelAcesso;
+    switch (cargo) {
+        case 'Administrador':
+            nivelAcesso = 'Total';
+            break;
+        case 'Gerente de Produção':
+            nivelAcesso = 'Gestor';
+            break;
+        case 'Conferente':
+        case 'Inspetor de Qualidade':
+        case 'Alimentador de Linha':
+            nivelAcesso = 'Usuario';
+            break;
+        default:
+            // Se um cargo inválido for enviado, retorna um erro.
+            return res.status(400).json({ message: 'Cargo inválido selecionado.' });
+    }
+
+    try {
+        // --- Validação Básica de Campos Obrigatórios ---
+        if (!nome || !email || !cpf || !cargo) {
+            return res.status(400).json({ message: 'Todos os campos obrigatórios (Nome, Email, CPF, Cargo) devem ser preenchidos.' });
+        }
+        
+        // Limpa a máscara do CPF para salvar apenas os 11 dígitos numéricos
+        const unmaskedCpf = cpf.replace(/\D/g, '');
+        if (unmaskedCpf.length !== 11) {
+            return res.status(400).json({ message: 'O CPF fornecido é inválido.' });
+        }
+
+        // --- Validação de Duplicidade (Email ou CPF) ---
+        const [existing] = await pool.query(
+            'SELECT IDFuncionario FROM Funcionarios WHERE (Email = ? OR CPF = ?) AND IDFuncionario != ?',
+            [email, unmaskedCpf, id || 0] // Usa o ID se estiver editando, ou 0 se estiver adicionando
+        );
+        if (existing.length > 0) {
+            return res.status(409).json({ message: 'Email ou CPF já cadastrado em outro funcionário.' });
+        }
+
+        // --- Processamento da Foto (Base64 para BLOB) ---
+        let fotoBlob = null;
+        if (foto && foto.startsWith('data:image')) {
+            const base64Data = foto.replace(/^data:image\/\w+;base64,/, '');
+            fotoBlob = Buffer.from(base64Data, 'base64');
+        }
+
+        // --- Processamento do Embedding Facial (Array para String JSON) ---
+        let embeddingStr = null;
+        if (face_embedding && typeof face_embedding === 'string') {
+            try {
+                // Garante que o embedding seja um JSON válido antes de salvar
+                const parsedEmbedding = JSON.parse(face_embedding);
+                if (Array.isArray(parsedEmbedding)) {
+                    embeddingStr = JSON.stringify(parsedEmbedding);
+                }
+            } catch (e) {
+                return res.status(400).json({ message: 'O formato do embedding facial é inválido.' });
+            }
+        }
+        
+        // --- Lógica de INSERT (Adicionar) ou UPDATE (Editar) ---
+        if (id) {
+            // Edição (UPDATE)
+            await pool.query(
+                `UPDATE Funcionarios SET Nome = ?, Email = ?, CPF = ?, Cargo = ?, NivelAcesso = ?, 
+                 Foto = IF(? IS NOT NULL, ?, Foto), 
+                 Face_Embedding = IF(? IS NOT NULL, ?, Face_Embedding) 
+                 WHERE IDFuncionario = ?`,
+                [nome, email, unmaskedCpf, cargo, nivelAcesso, fotoBlob, fotoBlob, embeddingStr, embeddingStr, id]
+            );
+            res.json({ success: true, message: 'Funcionário atualizado com sucesso!' });
+        } else {
+            // Adição (INSERT)
+            // A senha padrão deve ser trocada por um sistema de hash seguro em produção
+            const senhaPadrao = 'senha_padrao'; 
+            await pool.query(
+                `INSERT INTO Funcionarios (Nome, Email, CPF, Cargo, NivelAcesso, Foto, Face_Embedding, Senha) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                [nome, email, unmaskedCpf, cargo, nivelAcesso, fotoBlob, embeddingStr, senhaPadrao]
+            );
+            res.status(201).json({ success: true, message: 'Funcionário adicionado com sucesso!' });
+        }
+    } catch (error) {
+        console.error('Erro ao salvar funcionário:', error);
+        res.status(500).json({ success: false, message: 'Erro interno no servidor ao salvar o funcionário.' });
+    }
+});
+
+// Deletar funcionário
+app.delete('/api/admin/employees/:id', requireLogin, requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    try {
+        const [result] = await pool.query('DELETE FROM Funcionarios WHERE IDFuncionario = ?', [id]);
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Funcionário não encontrado.' });
+        }
+        res.json({ message: 'Funcionário deletado com sucesso!' });
+    } catch (error) {
+        console.error('Erro ao deletar funcionário:', error);
+        res.status(500).json({ message: 'Erro interno ao deletar.' });
+    }
+});
+
+// --- MÁQUINAS ---
+app.get('/api/admin/machines', requireLogin, requireAdmin, async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT Identificacao, Modelo FROM Maquinas');
+        res.json({ machines: rows });
+    } catch (error) {
+        console.error('Erro ao listar máquinas:', error);
+        res.status(500).json({ message: 'Erro ao carregar máquinas.' });
+    }
+});
+
+app.get('/api/admin/machines/:id', requireLogin, requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    try {
+        const [rows] = await pool.query('SELECT Identificacao, Modelo FROM Maquinas WHERE Identificacao = ?', [id]);
+        if (rows.length === 0) return res.status(404).json({ message: 'Máquina não encontrada.' });
+        res.json({ machine: rows[0] });
+    } catch (error) {
+        console.error('Erro ao buscar máquina:', error);
+        res.status(500).json({ message: 'Erro ao carregar máquina.' });
+    }
+});
+
+app.post('/api/admin/machines', requireLogin, requireAdmin, async (req, res) => {
+    const { modelo, identificacao } = req.body;
+    try {
+        if (!modelo || !identificacao) return res.status(400).json({ message: 'Modelo e identificação obrigatórios.' });
+        await pool.query('INSERT INTO Maquinas (Modelo, Identificacao) VALUES (?, ?)', [modelo, identificacao]);
+        res.json({ message: 'Máquina adicionada com sucesso!' });
+    } catch (error) {
+        console.error('Erro ao salvar máquina:', error);
+        res.status(500).json({ message: 'Erro interno ao salvar.' });
+    }
+});
+
+app.put('/api/admin/machines/:id', requireLogin, requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    const { modelo, identificacao } = req.body;
+    try {
+        await pool.query(
+            'UPDATE Maquinas SET Modelo = ?, Identificacao = ? WHERE Identificacao = ?',
+            [modelo, identificacao, id]
+        );
+        res.json({ message: 'Máquina atualizada com sucesso!' });
+    } catch (error) {
+        console.error('Erro ao atualizar máquina:', error);
+        res.status(500).json({ message: 'Erro interno ao atualizar.' });
+    }
+});
+
+app.delete('/api/admin/machines/:id', requireLogin, requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    try {
+        const [result] = await pool.query('DELETE FROM Maquinas WHERE Identificacao = ?', [id]);
+        if (result.affectedRows === 0) return res.status(404).json({ message: 'Máquina não encontrada.' });
+        res.json({ message: 'Máquina deletada com sucesso!' });
+    } catch (error) {
+        console.error('Erro ao deletar máquina:', error);
+        res.status(500).json({ message: 'Erro interno ao deletar.' });
+    }
+});
+
+// --- MATERIAIS (Tipos_MP) ---
+app.get('/api/admin/materials', requireLogin, requireAdmin, async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT TipoMP AS ID, TipoMP FROM Tipos_MP');
+        res.json({ materials: rows });
+    } catch (error) {
+        console.error('Erro ao listar materiais:', error);
+        res.status(500).json({ message: 'Erro ao carregar materiais.' });
+    }
+});
+
+app.get('/api/admin/materials/:id', requireLogin, requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    try {
+        const [rows] = await pool.query('SELECT TipoMP AS ID, TipoMP FROM Tipos_MP WHERE TipoMP = ?', [id]);
+        if (rows.length === 0) return res.status(404).json({ message: 'Material não encontrado.' });
+        res.json({ material: rows[0] });
+    } catch (error) {
+        console.error('Erro ao buscar material:', error);
+        res.status(500).json({ message: 'Erro ao carregar material.' });
+    }
+});
+
 app.post('/api/admin/materials', requireLogin, requireAdmin, async (req, res) => {
     const { tipoMP } = req.body;
     try {
+        if (!tipoMP) return res.status(400).json({ message: 'Tipo de material obrigatório.' });
         await pool.query('INSERT INTO Tipos_MP (TipoMP) VALUES (?)', [tipoMP]);
-        res.status(201).json({ success: true, message: 'Tipo de material criado com sucesso!' });
+        res.json({ message: 'Material adicionado com sucesso!' });
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Erro ao criar tipo de material.' });
-    }
-});
-app.put('/api/admin/materials/:type', requireLogin, requireAdmin, async (req, res) => {
-    const { novoTipoMP } = req.body;
-    const { type } = req.params;
-    try {
-        await pool.query('UPDATE Tipos_MP SET TipoMP = ? WHERE TipoMP = ?', [novoTipoMP, type]);
-        res.status(200).json({ success: true, message: 'Tipo de material atualizado com sucesso!' });
-    } catch (error) {
-        res.status(500).json({ success: false, message: 'Erro ao atualizar tipo de material.' });
+        console.error('Erro ao salvar material:', error);
+        res.status(500).json({ message: 'Erro interno ao salvar.' });
     }
 });
 
-// APIs para CRUD de Compatibilidade
-app.post('/api/admin/compatibility', requireLogin, requireAdmin, async (req, res) => {
-    const { tipoMP, maquinaId } = req.body;
+app.put('/api/admin/materials/:id', requireLogin, requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    const { tipoMP } = req.body;
     try {
-        await pool.query('INSERT INTO Compativel (fk_Tipos_MP_TipoMP, fk_Maquina_Identificacao) VALUES (?, ?)', [tipoMP, maquinaId]);
-        res.status(201).json({ success: true, message: 'Compatibilidade adicionada!' });
+        await pool.query('UPDATE Tipos_MP SET TipoMP = ? WHERE TipoMP = ?', [tipoMP, id]);
+        res.json({ message: 'Material atualizado com sucesso!' });
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Erro ao adicionar compatibilidade. Ela já pode existir.' });
+        console.error('Erro ao atualizar material:', error);
+        res.status(500).json({ message: 'Erro interno ao atualizar.' });
     }
 });
-app.delete('/api/admin/compatibility', requireLogin, requireAdmin, async (req, res) => {
-    const { tipoMP, maquinaId } = req.body;
+
+app.delete('/api/admin/materials/:id', requireLogin, requireAdmin, async (req, res) => {
+    const { id } = req.params;
     try {
-        await pool.query('DELETE FROM Compativel WHERE fk_Tipos_MP_TipoMP = ? AND fk_Maquina_Identificacao = ?', [tipoMP, maquinaId]);
-        res.status(200).json({ success: true, message: 'Compatibilidade removida!' });
+        const [result] = await pool.query('DELETE FROM Tipos_MP WHERE TipoMP = ?', [id]);
+        if (result.affectedRows === 0) return res.status(404).json({ message: 'Material não encontrado.' });
+        res.json({ message: 'Material deletado com sucesso!' });
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Erro ao remover compatibilidade.' });
+        console.error('Erro ao deletar material:', error);
+        res.status(500).json({ message: 'Erro interno ao deletar.' });
     }
 });
+
+// --- COMPATIBILIDADES (Compativel) ---
+app.get('/api/admin/compatibilities', requireLogin, requireAdmin, async (req, res) => {
+    try {
+        const [rows] = await pool.query(`
+            SELECT c.*, tm.TipoMP, m.Modelo 
+            FROM Compativel c 
+            JOIN Tipos_MP tm ON c.fk_Tipos_MP_TipoMP = tm.TipoMP 
+            JOIN Maquinas m ON c.fk_Maquina_Identificacao = m.Identificacao
+        `);
+        res.json({ compatibilities: rows });
+    } catch (error) {
+        console.error('Erro ao listar compatibilidades:', error);
+        res.status(500).json({ message: 'Erro ao carregar compatibilidades.' });
+    }
+});
+
+app.post('/api/admin/compatibilities', requireLogin, requireAdmin, async (req, res) => {
+    const { tipoMP, identificacao } = req.body;
+    try {
+        if (!tipoMP || !identificacao) return res.status(400).json({ message: 'Tipo MP e máquina obrigatórios.' });
+        await pool.query(
+            'INSERT INTO Compativel (fk_Tipos_MP_TipoMP, fk_Maquina_Identificacao) VALUES (?, ?)',
+            [tipoMP, identificacao]
+        );
+        res.json({ message: 'Compatibilidade adicionada com sucesso!' });
+    } catch (error) {
+        console.error('Erro ao adicionar compatibilidade:', error);
+        res.status(500).json({ message: 'Erro interno ao salvar.' });
+    }
+});
+
+app.delete('/api/admin/compatibilities/:id', requireLogin, requireAdmin, async (req, res) => {
+    const { id } = req.params;
+    try {
+        
+        await pool.query('DELETE FROM Compativel WHERE ID = ?', [id]);  // Adicione ID na tabela se precisar
+        res.json({ message: 'Compatibilidade deletada com sucesso!' });
+    } catch (error) {
+        console.error('Erro ao deletar compatibilidade:', error);
+        res.status(500).json({ message: 'Erro interno ao deletar.' });
+    }
+});
+
+// API para gerar o próximo código de lote sequencial anual
+app.get('/api/lote/proximo-codigo', requireLogin, async (req, res) => {
+    try {
+        const anoAtual = new Date().getFullYear();
+        const padraoBusca = `%-${anoAtual}`;
+
+        const [rows] = await pool.query(
+            `SELECT BarCode FROM Estoque_MP 
+             WHERE BarCode LIKE ? 
+             ORDER BY CAST(SUBSTRING_INDEX(BarCode, '-', 1) AS UNSIGNED) DESC 
+             LIMIT 1`,
+            [padraoBusca]
+        );
+
+        let proximoNumero = 1;
+
+        if (rows.length > 0) {
+            const ultimoCodigo = rows[0].BarCode;
+            const ultimoNumero = parseInt(ultimoCodigo.split('-')[0], 10);
+            proximoNumero = ultimoNumero + 1;
+        }
+
+        const novoCodigo = `${proximoNumero}-${anoAtual}`;
+        res.json({ success: true, codigoLote: novoCodigo });
+
+    } catch (error) {
+        console.error("Erro ao gerar próximo código de lote:", error);
+        res.status(500).json({ success: false, message: 'Erro interno ao gerar código.' });
+    }
+});
+
 
 // API para buscar detalhes de um lote específico
 app.get('/api/lote/:barcode', requireLogin, async (req, res) => {
@@ -439,6 +781,7 @@ app.get('/api/lote/:barcode', requireLogin, async (req, res) => {
         res.status(500).json({ success: false, message: 'Erro interno ao buscar lote.' });
     }
 });
+
 
 // API para registrar a identificação de um material (com transação)
 app.post('/api/identificar', requireLogin, async (req, res) => {
@@ -528,12 +871,17 @@ app.get('/api/dashboard/gestao', requireLogin, async (req, res) => {
             throw new Error('Erro na query consumptionByMachine: ' + err.message);
         }
         try {
-            [recentEntries] = await pool.query(`
-                SELECT r.DataHoraRegistro, e.BarCode, f.Nome as funcionarioNome
-                FROM Registro_Entrada_MP r
-                JOIN Estoque_MP e ON r.fk_Estoque_MP_BarCode = e.BarCode
-                JOIN Funcionarios f ON r.fk_Funcionarios_IDFuncionario = f.IDFuncionario
-                ORDER BY r.DataHoraRegistro DESC LIMIT 5
+            [recentMovements] = await pool.query(`
+                SELECT 
+                    rm.DataHoraMovimento, 
+                    rm.fk_Estoque_MP_BarCode as BarCode, 
+                    rm.QuantidadeMovida AS quantidadeMovida,
+                    f.Nome as funcionarioNome,  -- <-- ADICIONADO
+                    m.Modelo as maquinaNome
+                FROM Registro_Movimentacao rm
+                JOIN Funcionarios f ON rm.fk_Funcionarios_IDFuncionario = f.IDFuncionario -- <-- ADICIONADO
+                JOIN Maquinas m ON rm.fk_Maquina_Identificacao = m.Identificacao
+                ORDER BY rm.DataHoraMovimento DESC LIMIT 5
             `);
         } catch (err) {
             console.error('Erro na query recentEntries:', err);
@@ -580,6 +928,109 @@ app.get('/api/dashboard/gestao', requireLogin, async (req, res) => {
     }
 });
 
+// API para popular o DASHBOARD DO FUNCIONÁRIO
+app.get('/api/dashboard/funcionario/:id', requireLogin, async (req, res) => {
+    if (req.session.NivelAcesso !== 'Total' && req.session.NivelAcesso !== 'Gestor') {
+        return res.status(403).json({ message: 'Acesso negado.' });
+    }
+
+    try {
+        const { id } = req.params;
+        const [employeeRows] = await pool.query('SELECT Cargo FROM Funcionarios WHERE IDFuncionario = ?', [id]);
+        if (employeeRows.length === 0) {
+            return res.status(404).json({ message: 'Funcionário não encontrado.' });
+        }
+        const { Cargo } = employeeRows[0];
+
+        let responseData = { cargo: Cargo, registros: {}, stats: null };
+
+        // --- LÓGICA ESPECIAL PARA ADMINISTRADOR ---
+        if (Cargo === 'Administrador') {
+    // Busca registros de todas as atividades
+    const [recebimentos] = await pool.query(
+        `SELECT DataHoraRegistro, fk_Estoque_MP_BarCode FROM Registro_Entrada_MP WHERE fk_Funcionarios_IDFuncionario = ? ORDER BY DataHoraRegistro DESC`, [id]
+    );
+    const [identificacoes] = await pool.query(
+        `SELECT DataHoraIdentificacao, fk_Estoque_MP_BarCode, fk_Tipos_MP_TipoMP FROM Registro_Identificacao_MP WHERE fk_Funcionarios_IDFuncionario = ? ORDER BY DataHoraIdentificacao DESC`, [id]
+    );
+    const [movimentacoes] = await pool.query(
+        `SELECT DataHoraMovimento, fk_Estoque_MP_BarCode, QuantidadeMovida, OperacaoValida, TipoErro FROM Registro_Movimentacao WHERE fk_Funcionarios_IDFuncionario = ? ORDER BY DataHoraMovimento DESC`, [id]
+    );
+    
+    responseData.registros = {
+        recebimentos,
+        identificacoes,
+        movimentacoes
+    };
+    
+    // SÓ CALCULA AS ESTATÍSTICAS SE HOUVER MOVIMENTAÇÕES
+    if (movimentacoes.length > 0) {
+        const [statsRows] = await pool.query(
+            `SELECT OperacaoValida, TipoErro, COUNT(*) as count FROM Registro_Movimentacao WHERE fk_Funcionarios_IDFuncionario = ? GROUP BY OperacaoValida, TipoErro`, [id]
+        );
+        
+        const totalOperacoes = statsRows.reduce((sum, row) => sum + row.count, 0);
+        const acertos = statsRows.find(r => r.OperacaoValida === 1)?.count || 0;
+        const erros = totalOperacoes - acertos;
+        const taxaAcerto = totalOperacoes > 0 ? (acertos / totalOperacoes) * 100 : 0;
+        const errosPorTipo = statsRows.filter(r => r.OperacaoValida === 0).reduce((acc, row) => { acc[row.TipoErro] = row.count; return acc; }, {});
+        
+        responseData.stats = { totalOperacoes, acertos, erros, taxaAcerto: taxaAcerto.toFixed(1), errosPorTipo };
+    }
+    }else if (Cargo === 'Inspetor de Qualidade') {
+    const [registros] = await pool.query(
+        `SELECT r.DataHoraIdentificacao, r.fk_Estoque_MP_BarCode, r.fk_Tipos_MP_TipoMP 
+         FROM Registro_Identificacao_MP r 
+         WHERE r.fk_Funcionarios_IDFuncionario = ? ORDER BY r.DataHoraIdentificacao DESC`, [id]
+    );
+    // Padroniza a resposta
+    responseData.registros = { identificacoes: registros };
+
+} else if (Cargo === 'Conferente') {
+    const [registros] = await pool.query(
+        `SELECT r.DataHoraRegistro, r.fk_Estoque_MP_BarCode, e.fk_Berco_ID, e.Prateleira_Ocupada
+         FROM Registro_Entrada_MP r
+         JOIN Estoque_MP e ON r.fk_Estoque_MP_BarCode = e.BarCode
+         WHERE r.fk_Funcionarios_IDFuncionario = ? ORDER BY r.DataHoraRegistro DESC`, [id]
+    );
+    // Padroniza a resposta
+    responseData.registros = { recebimentos: registros };
+
+} else if (Cargo === 'Alimentador de Linha') {
+    const [registros] = await pool.query(
+        `SELECT DataHoraMovimento, fk_Estoque_MP_BarCode, QuantidadeMovida, OperacaoValida, TipoErro 
+         FROM Registro_Movimentacao 
+         WHERE fk_Funcionarios_IDFuncionario = ? ORDER BY DataHoraMovimento DESC`, [id]
+    );
+    // Padroniza a resposta
+    responseData.registros = { movimentacoes: registros };
+
+    // Calcula as estatísticas (só faz sentido se houver registros)
+    if (registros.length > 0) {
+        const [statsRows] = await pool.query(
+            `SELECT OperacaoValida, TipoErro, COUNT(*) as count 
+             FROM Registro_Movimentacao 
+             WHERE fk_Funcionarios_IDFuncionario = ? GROUP BY OperacaoValida, TipoErro`, [id]
+        );
+        
+        const totalOperacoes = statsRows.reduce((sum, row) => sum + row.count, 0);
+        const acertos = statsRows.find(r => r.OperacaoValida === 1)?.count || 0;
+        const erros = totalOperacoes - acertos;
+        const taxaAcerto = totalOperacoes > 0 ? (acertos / totalOperacoes) * 100 : 0;
+        const errosPorTipo = statsRows.filter(r => r.OperacaoValida === 0).reduce((acc, row) => { acc[row.TipoErro] = row.count; return acc; }, {});
+        
+        responseData.stats = { totalOperacoes, acertos, erros, taxaAcerto: taxaAcerto.toFixed(1), errosPorTipo };
+    }
+}
+        
+        res.json(responseData);
+
+    } catch (error) {
+        console.error("Erro no dashboard de funcionário:", error);
+        res.status(500).json({ message: 'Erro interno.' });
+    }
+});
+
 // API para VERIFICAR existência de Email ou CPF
 app.post('/api/admin/employees/check', requireLogin, requireAdmin, async (req, res) => {
     const { email, cpf } = req.body;
@@ -620,12 +1071,266 @@ app.post('/api/admin/employees/check', requireLogin, requireAdmin, async (req, r
     }
 });
 
+// API para listar todos os fornecedores
+app.get('/api/fornecedores', requireLogin, async (req, res) => {
+    try {
+        // Busca todos os fornecedores do banco de dados, ordenados por nome
+        const [fornecedores] = await pool.query('SELECT CNPJ, Nome FROM Fornecedores ORDER BY Nome');
+        res.json({ success: true, fornecedores });
+    } catch (error) {
+        console.error("Erro ao buscar fornecedores:", error);
+        res.status(500).json({ success: false, message: 'Erro interno ao carregar fornecedores.' });
+    }
+});
+
+
+// ROTA PARA A QUALIDADE: Buscar dados de um lote para finalizar
+app.get('/api/lote/para-identificar/:barcode', requireLogin, async (req, res) => {
+    const { barcode } = req.params;
+    try {
+        const [lotes] = await pool.query(
+            `SELECT e.BarCode, f.Nome as NomeFornecedor, b.Nome as NomeBerco, e.Prateleira_Ocupada
+             FROM Estoque_MP e
+             JOIN Fornecedores f ON e.fk_Fornecedores_CNPJ = f.CNPJ
+             JOIN Bercos b ON e.fk_Berco_ID = b.ID
+             WHERE e.BarCode = ? AND e.fk_Tipos_MP_TipoMP = 'Aguardando Identificação'`,
+            [barcode]
+        );
+        if (lotes.length === 0) {
+            return res.status(404).json({ message: 'Lote não encontrado ou já identificado.' });
+        }
+        res.json({ success: true, lote: lotes[0] });
+    } catch (error) {
+        res.status(500).json({ message: 'Erro ao buscar lote.' });
+    }
+});
+
+
+// ROTA PARA A QUALIDADE: Finalizar registro e gerar a etiqueta PDF
+app.post('/api/qualidade/finalizar', requireLogin, async (req, res) => {
+    const {
+        barcode, denominacaoMaterial, codPeca, item,
+        quantidade, corrida, observacao
+    } = req.body;
+    const funcionarioId = req.session.userId;
+    const nomeOperador = req.session.nome;
+    
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
+
+        // Atualiza o lote no estoque com os dados da qualidade
+        await connection.query(
+            `UPDATE Estoque_MP SET 
+                fk_Tipos_MP_TipoMP = ?, 
+                Quantidade = ?
+             WHERE BarCode = ?`,
+            [denominacaoMaterial, quantidade, barcode]
+        );
+        // Cria o registro de identificação para auditoria
+        await connection.query(
+            `INSERT INTO Registro_Identificacao_MP (DataHoraIdentificacao, fk_Funcionarios_IDFuncionario, fk_Tipos_MP_TipoMP, fk_Estoque_MP_BarCode) VALUES (?, ?, ?, ?)`,
+            [new Date(), funcionarioId, denominacaoMaterial, barcode]
+        );
+        
+        await connection.commit();
+
+        // Após salvar, busca todos os dados para a etiqueta
+        const [dadosCompletos] = await pool.query(
+            `SELECT f.Nome as NomeFornecedor FROM Estoque_MP e JOIN Fornecedores f ON e.fk_Fornecedores_CNPJ = f.CNPJ WHERE e.BarCode = ?`,
+            [barcode]
+        );
+
+        // Prepara o JSON para a página de impressão
+        res.status(200).json({
+            success: true,
+            message: 'Material identificado! Gerando etiqueta...',
+            dadosEtiqueta: {
+                fornecedor: dadosCompletos[0].NomeFornecedor,
+                denominacao: denominacaoMaterial,
+                codPeca: codPeca,
+                item: item,
+                operador: nomeOperador,
+                dataRec: new Date().toLocaleDateString('pt-BR'),
+                qtdRecebida: `${quantidade} PÇ`,
+                qtdAmarrados: '0',
+                corrida: corrida,
+                observacao: observacao || '',
+                codigoLote: barcode
+            }
+        });
+
+    } catch (error) {
+        if (connection) await connection.rollback();
+        console.error("Erro ao finalizar identificação:", error);
+        res.status(500).json({ success: false, message: 'Erro interno.' });
+    } finally {
+        if (connection) connection.release();
+    }
+});
+
+
+
+// ROTA 1: Busca os materiais compatíveis (sem alterações, mas incluída para contexto)
+app.get('/api/maquina/:id/compatibilidades', requireLogin, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const [materiais] = await pool.query(
+            `SELECT fk_Tipos_MP_TipoMP FROM Compativel WHERE fk_Maquina_Identificacao = ?`,
+            [id]
+        );
+        res.json({ success: true, materiais: materiais.map(m => m.fk_Tipos_MP_TipoMP) });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Erro ao buscar materiais compatíveis.' });
+    }
+});
+
+// Busca a localização (Berço/Prateleira) do lote mais antigo de um tipo de material
+app.get('/api/material/localizacao', requireLogin, async (req, res) => {
+    // Pega o parâmetro da query string
+    const { tipo } = req.query; 
+
+    if (!tipo) {
+        return res.status(400).json({ success: false, message: 'O tipo de material é obrigatório.' });
+    }
+
+    try {
+        const tipoDecodificado = decodeURIComponent(tipo);
+
+        // Encontra o lote mais antigo (pelo código de barras) que corresponde ao tipo,
+        // já passou pela qualidade (Quantidade IS NOT NULL) e tem estoque (> 0).
+        const [lotes] = await pool.query(
+            `SELECT e.BarCode, b.Nome as NomeBerco, e.Prateleira_Ocupada
+             FROM Estoque_MP e
+             JOIN Bercos b ON e.fk_Berco_ID = b.ID
+             WHERE e.fk_Tipos_MP_TipoMP = ? AND e.Quantidade IS NOT NULL AND e.Quantidade > 0
+             ORDER BY e.BarCode ASC 
+             LIMIT 1`,
+            [tipoDecodificado]
+        );
+        
+        if (lotes.length === 0) {
+            return res.status(404).json({ success: false, message: `Nenhum lote de '${tipoDecodificado}' disponível no estoque.` });
+        }
+        
+        res.json({ success: true, localizacao: lotes[0] });
+
+    } catch (error) {
+        console.error("Erro ao buscar localização do material:", error);
+        res.status(500).json({ success: false, message: 'Erro interno ao buscar localização do material.' });
+    }
+});
+
+
+// --- LÓGICA DE MOVIMENTAÇÃO CORRIGIDA ---
+
+// Função auxiliar para registrar movimentações inválidas de forma segura
+async function logarMovimentacaoInvalida(dados) {
+    const { tipoErro, maquinaId, funcionarioId, barcodeEsperado, barcodeLido } = dados;
+    
+    // Verifica se o barcode esperado existe para manter a integridade do FK, se possível
+    const [rows] = await pool.query('SELECT BarCode FROM Estoque_MP WHERE BarCode = ?', [barcodeEsperado]);
+    const fkBarcode = rows.length > 0 ? barcodeEsperado : null;
+
+    await pool.query(
+        `INSERT INTO Registro_Movimentacao 
+         (DataHoraMovimento, QuantidadeMovida, fk_Estoque_MP_BarCode, BarcodeLido, fk_Maquina_Identificacao, fk_Funcionarios_IDFuncionario, OperacaoValida, TipoErro) 
+         VALUES (?, 0, ?, ?, ?, ?, 0, ?)`,
+        [new Date(), fkBarcode, barcodeLido, maquinaId, funcionarioId, tipoErro]
+    );
+}
+
+// ROTA Valida o material escaneado contra o material esperado
+app.post('/api/movimentacao/validar-material', requireLogin, async (req, res) => {
+    const { maquinaId, materialEsperadoBarcode, materialLidoBarcode } = req.body;
+    
+    if (materialLidoBarcode === materialEsperadoBarcode) {
+        return res.json({ success: true, message: 'Material correto.' });
+    }
+
+    try {
+        await logarMovimentacaoInvalida({
+            tipoErro: 'material',
+            maquinaId: maquinaId,
+            funcionarioId: req.session.userId,
+            barcodeEsperado: materialEsperadoBarcode,
+            barcodeLido: materialLidoBarcode
+        });
+        res.status(400).json({ success: false, message: 'Erro: Material escaneado não é o correto. Tente novamente.' });
+    } catch (error) {
+        console.error("Erro ao registrar falha de material:", error);
+        res.status(500).json({ success: false, message: 'Erro interno ao registrar a falha.' });
+    }
+});
+
+// ROTA Valida a máquina de confirmação e finaliza a movimentação
+app.post('/api/movimentacao/finalizar', requireLogin, async (req, res) => {
+    const { maquinaId, materialBarcode, maquinaConfirmacaoId, quantidadeMovida } = req.body;
+    const funcionarioId = req.session.userId;
+
+    if (maquinaId !== maquinaConfirmacaoId) {
+        try {
+            await logarMovimentacaoInvalida({
+                tipoErro: 'maquina_confirmacao',
+                maquinaId: maquinaId,
+                funcionarioId: funcionarioId,
+                barcodeEsperado: materialBarcode, // O material correto já foi validado
+                barcodeLido: `MAQUINA:${maquinaConfirmacaoId}` // Armazenamos o ID da máquina errada aqui
+            });
+            return res.status(400).json({ success: false, message: 'Erro: Máquina de confirmação incorreta. Tente novamente.' });
+        } catch (error) {
+            console.error("Erro ao registrar falha de máquina:", error);
+            return res.status(500).json({ success: false, message: 'Erro interno ao registrar a falha.' });
+        }
+    }
+
+    // TUDO CORRETO, registra a movimentação VÁLIDA
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
+
+        const [loteRows] = await connection.query('SELECT Quantidade FROM Estoque_MP WHERE BarCode = ? FOR UPDATE', [materialBarcode]);
+        if (loteRows.length === 0 || loteRows[0].Quantidade < quantidadeMovida) {
+            await connection.rollback();
+            return res.status(400).json({ success: false, message: 'Lote não encontrado ou quantidade insuficiente no estoque.' });
+        }
+        
+        const novaQuantidade = loteRows[0].Quantidade - quantidadeMovida;
+        await connection.query('UPDATE Estoque_MP SET Quantidade = ? WHERE BarCode = ?', [novaQuantidade, materialBarcode]);
+        
+        await connection.query(
+            `INSERT INTO Registro_Movimentacao 
+             (DataHoraMovimento, QuantidadeMovida, fk_Estoque_MP_BarCode, BarcodeLido, fk_Maquina_Identificacao, fk_Funcionarios_IDFuncionario, OperacaoValida, TipoErro) 
+             VALUES (?, ?, ?, ?, ?, ?, 1, '----')`,
+            [new Date(), quantidadeMovida, materialBarcode, materialBarcode, maquinaId, funcionarioId]
+        );
+
+        await connection.commit();
+        res.status(201).json({ success: true, message: 'Movimentação registrada com sucesso!' });
+
+    } catch (error) {
+        if (connection) await connection.rollback();
+        console.error("Erro ao registrar movimentação válida:", error);
+        res.status(500).json({ success: false, message: 'Erro interno no servidor.' });
+    } finally {
+        if (connection) connection.release();
+    }
+});
+
 // --- SERVIDORES DE ARQUIVOS ESTÁTICOS (DEFINIDOS POR ÚLTIMO) ---
 
+// Servir a pasta de impressão
+app.use('/print', express.static(path.join(projectRoot, 'print')));
 // Servir assets específicos das views (como recebimento.js)
 app.use(express.static(path.join(projectRoot, 'public')));
 // Servir assets da página principal (como index.html, login.js, style.css)
 app.use(express.static(projectRoot));
+
+// Servir os modelos de IA da pasta /models
+app.use('/models', express.static(path.join(projectRoot, 'models'))); // <-- ADICIONE ESTA LINHA
+
 
 app.post('/api/contact', async (req, res) => {
     const { nome, email, assunto, mensagem, data_envio, projeto } = req.body;
