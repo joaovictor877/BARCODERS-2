@@ -1,1 +1,1 @@
-const API_ENDPOINT = 'http://localhost:8080';
+const API_ENDPOINT = 'https://barcoders.azurewebsites.net';
