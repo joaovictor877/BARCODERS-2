@@ -1,1 +1,1 @@
-const API_ENDPOINT = 'https://barcoders.azurewebsites.net';
+const API_ENDPOINT = 'barcoders.azurewebsites.net';
