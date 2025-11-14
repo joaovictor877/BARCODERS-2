@@ -1,7 +1,7 @@
 // js/facial-login.js (atualizado)
 
 const MODEL_URL = '/models';
-const THRESHOLD = 0.6;
+const THRESHOLD = 0.45;
 
 let video, canvas, displaySize, storedDescriptor = null;
 

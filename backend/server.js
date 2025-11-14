@@ -453,8 +453,6 @@ app.get('/api/admin/employees/:id', requireLogin, requireAdmin, async (req, res)
 
 // Adicionar ou editar funcionário (POST/PUT)
 app.post('/api/admin/employees', requireLogin, requireAdmin, async (req, res) => {
-    // O nível de acesso é intencionalmente omitido do destructuring,
-    // pois ele será definido de forma segura no backend com base no cargo.
     const { id, nome, email, cpf, cargo, foto, face_embedding } = req.body;
 
     // --- Regra de Negócio: Define o Nível de Acesso com base no Cargo ---
@@ -472,43 +470,36 @@ app.post('/api/admin/employees', requireLogin, requireAdmin, async (req, res) =>
             nivelAcesso = 'Usuario';
             break;
         default:
-            // Se um cargo inválido for enviado, retorna um erro.
             return res.status(400).json({ message: 'Cargo inválido selecionado.' });
     }
 
     try {
-        // --- Validação Básica de Campos Obrigatórios ---
         if (!nome || !email || !cpf || !cargo) {
-            return res.status(400).json({ message: 'Todos os campos obrigatórios (Nome, Email, CPF, Cargo) devem ser preenchidos.' });
+            return res.status(400).json({ message: 'Todos os campos obrigatórios devem ser preenchidos.' });
         }
         
-        // Limpa a máscara do CPF para salvar apenas os 11 dígitos numéricos
         const unmaskedCpf = cpf.replace(/\D/g, '');
         if (unmaskedCpf.length !== 11) {
             return res.status(400).json({ message: 'O CPF fornecido é inválido.' });
         }
 
-        // --- Validação de Duplicidade (Email ou CPF) ---
         const [existing] = await pool.query(
             'SELECT IDFuncionario FROM Funcionarios WHERE (Email = ? OR CPF = ?) AND IDFuncionario != ?',
-            [email, unmaskedCpf, id || 0] // Usa o ID se estiver editando, ou 0 se estiver adicionando
+            [email, unmaskedCpf, id || 0]
         );
         if (existing.length > 0) {
-            return res.status(409).json({ message: 'Email ou CPF já cadastrado em outro funcionário.' });
+            return res.status(409).json({ message: 'Email ou CPF já cadastrado.' });
         }
 
-        // --- Processamento da Foto (Base64 para BLOB) ---
         let fotoBlob = null;
         if (foto && foto.startsWith('data:image')) {
             const base64Data = foto.replace(/^data:image\/\w+;base64,/, '');
             fotoBlob = Buffer.from(base64Data, 'base64');
         }
 
-        // --- Processamento do Embedding Facial (Array para String JSON) ---
         let embeddingStr = null;
         if (face_embedding && typeof face_embedding === 'string') {
             try {
-                // Garante que o embedding seja um JSON válido antes de salvar
                 const parsedEmbedding = JSON.parse(face_embedding);
                 if (Array.isArray(parsedEmbedding)) {
                     embeddingStr = JSON.stringify(parsedEmbedding);
@@ -518,9 +509,7 @@ app.post('/api/admin/employees', requireLogin, requireAdmin, async (req, res) =>
             }
         }
         
-        // --- Lógica de INSERT (Adicionar) ou UPDATE (Editar) ---
         if (id) {
-            // Edição (UPDATE)
             await pool.query(
                 `UPDATE Funcionarios SET Nome = ?, Email = ?, CPF = ?, Cargo = ?, NivelAcesso = ?, 
                  Foto = IF(? IS NOT NULL, ?, Foto), 
@@ -530,8 +519,6 @@ app.post('/api/admin/employees', requireLogin, requireAdmin, async (req, res) =>
             );
             res.json({ success: true, message: 'Funcionário atualizado com sucesso!' });
         } else {
-            // Adição (INSERT)
-            // A senha padrão deve ser trocada por um sistema de hash seguro em produção
             const senhaPadrao = 'senha_padrao'; 
             await pool.query(
                 `INSERT INTO Funcionarios (Nome, Email, CPF, Cargo, NivelAcesso, Foto, Face_Embedding, Senha) 
@@ -542,7 +529,7 @@ app.post('/api/admin/employees', requireLogin, requireAdmin, async (req, res) =>
         }
     } catch (error) {
         console.error('Erro ao salvar funcionário:', error);
-        res.status(500).json({ success: false, message: 'Erro interno no servidor ao salvar o funcionário.' });
+        res.status(500).json({ success: false, message: 'Erro interno no servidor.' });
     }
 });
 

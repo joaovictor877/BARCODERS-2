@@ -21,20 +21,16 @@
             <a href="/lobby" class="text-indigo-600 hover:text-indigo-800">&larr; Voltar ao Lobby</a>
         </div>
 
-        <!-- Layout principal com Grid -->
         <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
-            
             <!-- Coluna Esquerda: Cadastros -->
             <div class="space-y-8">
                 <!-- Gerenciar Funcionários -->
                 <div class="bg-white p-6 rounded-lg shadow-md">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-xl font-semibold">Gerenciar Funcionários</h3>
-                        <button id="add-employee-btn" class="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 text-sm font-medium">Adicionar Novo</button>
+                        <button id="add-employee-btn" class="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600">Adicionar Novo</button>
                     </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full mt-4 text-sm text-left"><thead class="text-xs text-gray-700 uppercase bg-gray-50"><tr><th class="px-4 py-2">Nome</th><th class="px-4 py-2">Cargo</th><th class="px-4 py-2">Nível</th><th class="px-4 py-2">Ações</th></tr></thead><tbody id="employees-table-body"></tbody></table>
-                    </div>
+                    <table class="w-full mt-4 text-sm"><thead class="text-xs text-gray-700 uppercase bg-gray-50"><tr><th class="px-4 py-2">Nome</th><th class="px-4 py-2">Cargo</th><th class="px-4 py-2">Nível</th><th class="px-4 py-2">Ações</th></tr></thead><tbody id="employees-table-body"></tbody></table>
                 </div>
 
                 <!-- Gerenciar Máquinas -->

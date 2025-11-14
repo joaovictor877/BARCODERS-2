@@ -75,13 +75,15 @@ function openModal(type, editId) {
     }
 }
 
-// Gera conteúdo do modal baseado no type
+/**
+ *  Gera o conteúdo HTML do formulário de funcionário.
+ */
 function generateModalContent(type, editId) {
     const isEdit = !!editId;
-    let content = `<h3 class="text-xl font-semibold mb-4">${isEdit ? 'Editar' : 'Adicionar'} ${type.charAt(0).toUpperCase() + type.slice(1)}</h3>
-                   <form id="${type}-form">
+    let content = `<h3 class="text-xl font-semibold mb-4">${isEdit ? 'Editar' : 'Adicionar'} Funcionário</h3>
+                   <form id="employee-form" onsubmit="return false;">
                        <div class="space-y-4">
-                           <input type="hidden" id="${type}-id" value="${editId || ''}">`;
+                           <input type="hidden" id="employee-id" value="${editId || ''}">`;
 
     if (type === 'employee') {
         content += `
@@ -96,20 +98,16 @@ function generateModalContent(type, editId) {
                 <option value="Inspetor de Qualidade">Inspetor de Qualidade</option>
                 <option value="Alimentador de Linha">Alimentador de Linha (Movimentação)</option>
             </select>
-            
-            <!-- Campo de Nível de Acesso está oculto -->
             <input type="hidden" id="employee-nivel" name="nivelAcesso">
-            
-            <!-- Seção Facial -->
-            <div id="facial-camera" class="hidden mt-4">
-                    <video id="admin-video" width="100%" height="200" autoplay muted playsinline></video>
-                    
-                    <!-- ADICIONE ESTE BLOCO -->
+            <div id="facial-section">
+                <h4 class="font-medium mb-2">Foto Facial para Reconhecimento</h4>
+                <button type="button" id="capture-facial-btn" class="w-full bg-green-500 text-white py-2 rounded hover:bg-green-600">Capturar Foto Facial</button>
+                <div id="facial-camera" class="hidden mt-4">
+                    <video id="admin-video" class="w-full rounded-lg" height="240" autoplay muted playsinline></video>
                     <div id="camera-controls-admin" class="flex items-center gap-2 mt-2 hidden">
                         <label for="videoSourceAdmin" class="text-sm">Câmera:</label>
                         <select id="videoSourceAdmin" class="flex-grow p-1 border rounded text-sm"></select>
                     </div>
-                    
                     <canvas id="admin-canvas" class="hidden"></canvas>
                     <p id="facial-status" class="text-center text-sm text-gray-600 mt-2">Posicione o rosto...</p>
                     <button type="button" id="capture-foto-btn" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 mt-2">Confirmar Captura</button>
@@ -118,25 +116,12 @@ function generateModalContent(type, editId) {
                 <input type="hidden" id="employee-embedding" name="face_embedding">
                 <div id="facial-preview" class="mt-2 hidden"></div>
             </div>
-                    `;
-    } else if (type === 'machine') {
-        content += `
-                            <input type="text" id="machine-modelo" placeholder="Modelo da Máquina" class="w-full px-4 py-3 border rounded-lg" required>
-                            <input type="text" id="machine-identificacao" placeholder="Identificação Única" class="w-full px-4 py-3 border rounded-lg" required>
-                        `;
-    } else if (type === 'material') {
-        content += `
-                            <input type="text" id="material-tipo" placeholder="Tipo de Material (ex: Aço, Plástico)" class="w-full px-4 py-3 border rounded-lg" required>
-                        `;
+        `;
     }
-
     content += `
-                            <button type="submit" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-medium hover:bg-indigo-700">Salvar ${isEdit ? 'Alterações' : ''}</button>
-                       </div>
-                   </form>
-                   <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">&times;</button>
-                   <style>.absolute { position: absolute; }</style>`;
-
+            <button type="submit" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-medium hover:bg-indigo-700">Salvar</button>
+            </div></form>
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl">&times;</button>`;
     return content;
 }
 
