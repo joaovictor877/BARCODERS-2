@@ -6,6 +6,10 @@
     "start": "node backend/server.js",
     "build:tailwind": "npx tailwindcss -i ./src/input.css -o ./dist/output.css --minify"
   },
+  "engines": {
+    "node": ">=18.x",
+    "npm": ">=9.x"
+  },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.14",
     "bwip-js": "^4.7.0",
