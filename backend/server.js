@@ -9,6 +9,7 @@ import session from 'express-session';
 import pool from './db.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { loadModels, recognizeFace } from './faceRecognition.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -26,34 +27,35 @@ app.set('views', path.join(projectRoot, 'views'));
 
 // Middleware para proteger rotas DE ADMIN
 const requireAdmin = (req, res, next) => {
-  if (req.session.NivelAcesso !== 'Total') {
-    return res.status(403).redirect('/lobby'); 
-  }
-  next();
+    if (req.session.NivelAcesso !== 'Total') {
+        return res.status(403).redirect('/lobby');
+    }
+    next();
 };
 
 // Middlewares essenciais
 app.use(cors());
-app.use(express.json());
+app.use(cors());
+app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Configuração do Express Session
 app.use(session({
-  secret: 'seu_segredo_super_secreto_aqui',
-  resave: false,
-  saveUninitialized: false,
-  cookie: { 
-    secure: false, 
-    maxAge: 1000 * 60 * 60
-  }
+    secret: 'seu_segredo_super_secreto_aqui',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        secure: false,
+        maxAge: 1000 * 60 * 60
+    }
 }));
 
 // Middleware para proteger rotas
 const requireLogin = (req, res, next) => {
-  if (!req.session.userId) {
-    return res.redirect('/');
-  }
-  next();
+    if (!req.session.userId) {
+        return res.redirect('/');
+    }
+    next();
 };
 
 
@@ -62,23 +64,44 @@ const requireLogin = (req, res, next) => {
 
 
 //Login facial 
+//Login facial 
 app.post('/api/login-facial', async (req, res) => {
-    const { id } = req.body;
+    const { id, image } = req.body;
     try {
         const [rows] = await pool.query(
-            'SELECT IDFuncionario, Nome, NivelAcesso, Cargo FROM Funcionarios WHERE IDFuncionario  = ?',
+            'SELECT IDFuncionario, Nome, NivelAcesso, Cargo, Face_Embedding FROM Funcionarios WHERE IDFuncionario  = ?',
             [id]
         );
         if (rows.length === 0) {
             return res.status(404).json({ message: 'Funcionário não encontrado.' });
         }
         const funcionario = rows[0];
-        // Cria session
-        req.session.userId = funcionario.IDFuncionario ;
-        req.session.NivelAcesso = funcionario.NivelAcesso;
-        req.session.cargo = funcionario.Cargo;
-        req.session.nome = funcionario.Nome;
-        res.json({ success: true, message: 'Login realizado com sucesso!', redirect: '/lobby' });
+
+        if (!funcionario.Face_Embedding) {
+            return res.status(400).json({ message: 'Funcionário sem biometria cadastrada.' });
+        }
+
+        if (!image) {
+            return res.status(400).json({ message: 'Imagem facial não fornecida.' });
+        }
+
+        // Remove header do base64 se existir
+        const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
+        const imageBuffer = Buffer.from(base64Data, 'base64');
+
+        const result = await recognizeFace(imageBuffer, funcionario.Face_Embedding);
+
+        if (result.match) {
+            // Cria session
+            req.session.userId = funcionario.IDFuncionario;
+            req.session.NivelAcesso = funcionario.NivelAcesso;
+            req.session.cargo = funcionario.Cargo;
+            req.session.nome = funcionario.Nome;
+            res.json({ success: true, message: 'Login realizado com sucesso!', redirect: '/lobby' });
+        } else {
+            res.status(401).json({ success: false, message: result.message || 'Rosto não reconhecido.' });
+        }
+
     } catch (error) {
         console.error('Erro no login facial:', error);
         res.status(500).json({ message: 'Erro interno no login.' });
@@ -93,42 +116,42 @@ app.get('/', (req, res) => {
 
 // Rota do Lobby (protegida)
 app.get('/lobby', requireLogin, (req, res) => {
-  const { NivelAcesso, cargo, nome } = req.session;
-  let linksPermitidos = [];
+    const { NivelAcesso, cargo, nome } = req.session;
+    let linksPermitidos = [];
 
-  // Usando 'if / else if' para garantir que apenas um bloco de permissão seja executado
-  if (NivelAcesso === 'Total') {
-    // Nível Total (Admin) tem acesso a tudo.
-    linksPermitidos.push({ nome: 'Painel do Administrador', url: '/admin' });
-    linksPermitidos.push({ nome: 'Dashboard de Gestão', url: '/gestao' });
-    linksPermitidos.push({ nome: 'Controle de Recebimento', url: '/recebimento' });
-    linksPermitidos.push({ nome: 'Identificação de Material', url: '/qualidade' });
-    linksPermitidos.push({ nome: 'Movimentação de Material', url: '/movimentacao' });
-    linksPermitidos.push({ nome: 'Dashboard de Funcionários', url: '/dashboard-funcionario' });
+    // Usando 'if / else if' para garantir que apenas um bloco de permissão seja executado
+    if (NivelAcesso === 'Total') {
+        // Nível Total (Admin) tem acesso a tudo.
+        linksPermitidos.push({ nome: 'Painel do Administrador', url: '/admin' });
+        linksPermitidos.push({ nome: 'Dashboard de Gestão', url: '/gestao' });
+        linksPermitidos.push({ nome: 'Controle de Recebimento', url: '/recebimento' });
+        linksPermitidos.push({ nome: 'Identificação de Material', url: '/qualidade' });
+        linksPermitidos.push({ nome: 'Movimentação de Material', url: '/movimentacao' });
+        linksPermitidos.push({ nome: 'Dashboard de Funcionários', url: '/dashboard-funcionario' });
 
-  
-  } else if (NivelAcesso === 'Gestor') {
-    // Nível Gestor tem acesso a dashboards e pode ter acesso a outras telas no futuro.
-    if (cargo === 'Gerente de Produção') {
-      linksPermitidos.push({ nome: 'Dashboard de Gestão', url: '/gestao' });
-      linksPermitidos.push({ nome: 'Dashboard de Funcionários', url: '/dashboard-funcionario' });
 
-    }
-    }else if (NivelAcesso === 'Usuario') {
+    } else if (NivelAcesso === 'Gestor') {
+        // Nível Gestor tem acesso a dashboards e pode ter acesso a outras telas no futuro.
+        if (cargo === 'Gerente de Produção') {
+            linksPermitidos.push({ nome: 'Dashboard de Gestão', url: '/gestao' });
+            linksPermitidos.push({ nome: 'Dashboard de Funcionários', url: '/dashboard-funcionario' });
+
+        }
+    } else if (NivelAcesso === 'Usuario') {
         // Nível Usuário tem acesso apenas às suas telas operacionais específicas.
         if (cargo === 'Conferente') {
-        linksPermitidos.push({ nome: 'Controle de Recebimento', url: '/recebimento' });
+            linksPermitidos.push({ nome: 'Controle de Recebimento', url: '/recebimento' });
         }
         if (cargo === 'Inspetor de Qualidade') {
-        linksPermitidos.push({ nome: 'Identificação de Material', url: '/qualidade' });
+            linksPermitidos.push({ nome: 'Identificação de Material', url: '/qualidade' });
         }
         if (cargo === 'Alimentador de Linha') {
-        linksPermitidos.push({ nome: 'Movimentação de Material', url: '/movimentacao' });
+            linksPermitidos.push({ nome: 'Movimentação de Material', url: '/movimentacao' });
         }
-    
-  }
 
-  res.render('lobby', { nome, links: linksPermitidos });
+    }
+
+    res.render('lobby', { nome, links: linksPermitidos });
 });
 
 
@@ -138,7 +161,7 @@ app.get('/recebimento', requireLogin, async (req, res) => {
         // Busca fornecedores e tipos de matéria-prima do banco
         const [fornecedores] = await pool.query('SELECT CNPJ, Nome FROM Fornecedores');
         const [tiposMP] = await pool.query('SELECT TipoMP FROM Tipos_MP');
-        
+
         // Renderiza a página passando os dados
         res.render('recebimento', { fornecedores, tiposMP });
     } catch (error) {
@@ -273,7 +296,7 @@ app.post('/api/recebimento/registrar', requireLogin, async (req, res) => {
             `UPDATE Bercos SET ${nomeColunaPrateleira} = ? WHERE ID = ?`,
             [codigoLote, bercoId]
         );
-        
+
         await connection.commit();
         res.status(201).json({ success: true, message: 'Entrada registrada! Leve o material para a Qualidade.', codigoLote: codigoLote });
 
@@ -303,16 +326,16 @@ app.post('/api/movimentacao', requireLogin, async (req, res) => {
 
         // Busca o lote e sua quantidade atual, travando a linha para evitar condições de corrida
         const [estoqueRows] = await connection.query(
-            'SELECT BarCode, Quantidade, fk_Tipos_MP_TipoMP FROM Estoque_MP WHERE BarCode = ? FOR UPDATE', 
+            'SELECT BarCode, Quantidade, fk_Tipos_MP_TipoMP FROM Estoque_MP WHERE BarCode = ? FOR UPDATE',
             [codigoLote]
         );
-        
+
         // Validação 1: O lote existe no estoque?
         if (estoqueRows.length === 0) {
             await connection.rollback(); // Desfaz a transação
             return res.status(404).json({ success: false, message: 'Lote não encontrado no estoque. Verifique o código de barras.' });
         }
-        
+
         const lote = estoqueRows[0];
 
         // Validação 2: A quantidade a ser movida é maior que a disponível?
@@ -320,7 +343,7 @@ app.post('/api/movimentacao', requireLogin, async (req, res) => {
             await connection.rollback();
             return res.status(400).json({ success: false, message: `Quantidade a ser movida (${quantidadeMovida}) é maior que a disponível em estoque (${lote.Quantidade}).` });
         }
-        
+
         // Validação 3: O material já foi identificado pela Qualidade?
         if (lote.fk_Tipos_MP_TipoMP === 'Aguardando Identificação') {
             await connection.rollback();
@@ -340,7 +363,7 @@ app.post('/api/movimentacao', requireLogin, async (req, res) => {
         }
 
         // Se todas as validações passaram, executa as atualizações no banco
-        
+
         // ETAPA 1: Subtrai a quantidade do estoque principal
         const novaQuantidade = lote.Quantidade - parseInt(quantidadeMovida);
         await connection.query(
@@ -349,7 +372,7 @@ app.post('/api/movimentacao', requireLogin, async (req, res) => {
         );
 
         // ETAPA 2: Insere o registro da movimentação com a quantidade específica
-         const sqlMovimentacao = `
+        const sqlMovimentacao = `
             INSERT INTO Registro_Movimentacao 
             (DataHoraMovimento, QuantidadeMovida, fk_Estoque_MP_BarCode, fk_Maquina_Identificacao, fk_Funcionarios_IDFuncionario)
             VALUES (?, ?, ?, ?, ?)
@@ -371,36 +394,36 @@ app.post('/api/movimentacao', requireLogin, async (req, res) => {
 
 // Endpoint de Logout
 app.get('/logout', (req, res) => {
-  req.session.destroy(err => {
-    if (err) return res.redirect('/lobby');
-    res.clearCookie('connect.sid');
-    res.redirect('/');
-  });
+    req.session.destroy(err => {
+        if (err) return res.redirect('/lobby');
+        res.clearCookie('connect.sid');
+        res.redirect('/');
+    });
 });
 
 // Endpoint de login
 app.post('/api/login', async (req, res) => {
-  const { email, password } = req.body;
-  if (!email || !password) return res.status(400).json({ success: false, message: 'Email e senha são obrigatórios' });
-  try {
-    const [rows] = await pool.query('SELECT IDFuncionario, Nome, NivelAcesso, Cargo FROM Funcionarios WHERE Email = ? AND Senha = ?', [email, password]);
-    if (rows.length > 0) {
-      const user = rows[0];
-      req.session.userId = user.IDFuncionario;
-      req.session.nome = user.Nome;
-      req.session.NivelAcesso = user.NivelAcesso;
-      req.session.cargo = user.Cargo;
-      req.session.save(err => {
-        if (err) return res.status(500).json({ success: false, message: 'Erro ao iniciar a sessão' });
-        res.status(200).json({ success: true, message: 'Login bem-sucedido', redirectUrl: '/lobby' });
-      });
-    } else {
-      res.status(401).json({ success: false, message: 'Email ou senha inválidos' });
+    const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ success: false, message: 'Email e senha são obrigatórios' });
+    try {
+        const [rows] = await pool.query('SELECT IDFuncionario, Nome, NivelAcesso, Cargo FROM Funcionarios WHERE Email = ? AND Senha = ?', [email, password]);
+        if (rows.length > 0) {
+            const user = rows[0];
+            req.session.userId = user.IDFuncionario;
+            req.session.nome = user.Nome;
+            req.session.NivelAcesso = user.NivelAcesso;
+            req.session.cargo = user.Cargo;
+            req.session.save(err => {
+                if (err) return res.status(500).json({ success: false, message: 'Erro ao iniciar a sessão' });
+                res.status(200).json({ success: true, message: 'Login bem-sucedido', redirectUrl: '/lobby' });
+            });
+        } else {
+            res.status(401).json({ success: false, message: 'Email ou senha inválidos' });
+        }
+    } catch (error) {
+        console.error('Erro no banco de dados:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor' });
     }
-  } catch (error) {
-    console.error('Erro no banco de dados:', error);
-    res.status(500).json({ success: false, message: 'Erro interno do servidor' });
-  }
 });
 
 
@@ -477,7 +500,7 @@ app.post('/api/admin/employees', requireLogin, requireAdmin, async (req, res) =>
         if (!nome || !email || !cpf || !cargo) {
             return res.status(400).json({ message: 'Todos os campos obrigatórios devem ser preenchidos.' });
         }
-        
+
         const unmaskedCpf = cpf.replace(/\D/g, '');
         if (unmaskedCpf.length !== 11) {
             return res.status(400).json({ message: 'O CPF fornecido é inválido.' });
@@ -508,7 +531,7 @@ app.post('/api/admin/employees', requireLogin, requireAdmin, async (req, res) =>
                 return res.status(400).json({ message: 'O formato do embedding facial é inválido.' });
             }
         }
-        
+
         if (id) {
             await pool.query(
                 `UPDATE Funcionarios SET Nome = ?, Email = ?, CPF = ?, Cargo = ?, NivelAcesso = ?, 
@@ -519,7 +542,7 @@ app.post('/api/admin/employees', requireLogin, requireAdmin, async (req, res) =>
             );
             res.json({ success: true, message: 'Funcionário atualizado com sucesso!' });
         } else {
-            const senhaPadrao = 'senha_padrao'; 
+            const senhaPadrao = 'senha_padrao';
             await pool.query(
                 `INSERT INTO Funcionarios (Nome, Email, CPF, Cargo, NivelAcesso, Foto, Face_Embedding, Senha) 
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -572,10 +595,10 @@ app.get('/api/admin/machines/:id', requireLogin, requireAdmin, async (req, res) 
 });
 
 app.post('/api/admin/machines', requireLogin, requireAdmin, async (req, res) => {
-    const { modelo, identificacao } = req.body;
+    const { modelo } = req.body;
     try {
-        if (!modelo || !identificacao) return res.status(400).json({ message: 'Modelo e identificação obrigatórios.' });
-        await pool.query('INSERT INTO Maquinas (Modelo, Identificacao) VALUES (?, ?)', [modelo, identificacao]);
+        if (!modelo) return res.status(400).json({ message: 'Modelo obrigatório.' });
+        await pool.query('INSERT INTO Maquinas (Modelo) VALUES (?)', [modelo]);
         res.json({ message: 'Máquina adicionada com sucesso!' });
     } catch (error) {
         console.error('Erro ao salvar máquina:', error);
@@ -585,11 +608,11 @@ app.post('/api/admin/machines', requireLogin, requireAdmin, async (req, res) => 
 
 app.put('/api/admin/machines/:id', requireLogin, requireAdmin, async (req, res) => {
     const { id } = req.params;
-    const { modelo, identificacao } = req.body;
+    const { modelo } = req.body;
     try {
         await pool.query(
-            'UPDATE Maquinas SET Modelo = ?, Identificacao = ? WHERE Identificacao = ?',
-            [modelo, identificacao, id]
+            'UPDATE Maquinas SET Modelo = ? WHERE Identificacao = ?',
+            [modelo, id]
         );
         res.json({ message: 'Máquina atualizada com sucesso!' });
     } catch (error) {
@@ -613,7 +636,7 @@ app.delete('/api/admin/machines/:id', requireLogin, requireAdmin, async (req, re
 // --- MATERIAIS (Tipos_MP) ---
 app.get('/api/admin/materials', requireLogin, requireAdmin, async (req, res) => {
     try {
-        const [rows] = await pool.query('SELECT TipoMP AS ID, TipoMP FROM Tipos_MP');
+        const [rows] = await pool.query("SELECT TipoMP AS ID, TipoMP FROM Tipos_MP WHERE TipoMP != 'Aguardando Identificação'");
         res.json({ materials: rows });
     } catch (error) {
         console.error('Erro ao listar materiais:', error);
@@ -695,16 +718,19 @@ app.post('/api/admin/compatibilities', requireLogin, requireAdmin, async (req, r
         );
         res.json({ message: 'Compatibilidade adicionada com sucesso!' });
     } catch (error) {
+        if (error.code === 'ER_DUP_ENTRY') {
+            return res.status(409).json({ message: 'Esta compatibilidade já existe.' });
+        }
         console.error('Erro ao adicionar compatibilidade:', error);
         res.status(500).json({ message: 'Erro interno ao salvar.' });
     }
 });
 
-app.delete('/api/admin/compatibilities/:id', requireLogin, requireAdmin, async (req, res) => {
-    const { id } = req.params;
+app.delete('/api/admin/compatibilities', requireLogin, requireAdmin, async (req, res) => {
+    const { tipoMP, identificacao } = req.query;
     try {
-        
-        await pool.query('DELETE FROM Compativel WHERE ID = ?', [id]);  // Adicione ID na tabela se precisar
+        if (!tipoMP || !identificacao) return res.status(400).json({ message: 'Parâmetros inválidos.' });
+        await pool.query('DELETE FROM Compativel WHERE fk_Tipos_MP_TipoMP = ? AND fk_Maquina_Identificacao = ?', [tipoMP, identificacao]);
         res.json({ message: 'Compatibilidade deletada com sucesso!' });
     } catch (error) {
         console.error('Erro ao deletar compatibilidade:', error);
@@ -933,83 +959,83 @@ app.get('/api/dashboard/funcionario/:id', requireLogin, async (req, res) => {
 
         // --- LÓGICA ESPECIAL PARA ADMINISTRADOR ---
         if (Cargo === 'Administrador') {
-    // Busca registros de todas as atividades
-    const [recebimentos] = await pool.query(
-        `SELECT DataHoraRegistro, fk_Estoque_MP_BarCode FROM Registro_Entrada_MP WHERE fk_Funcionarios_IDFuncionario = ? ORDER BY DataHoraRegistro DESC`, [id]
-    );
-    const [identificacoes] = await pool.query(
-        `SELECT DataHoraIdentificacao, fk_Estoque_MP_BarCode, fk_Tipos_MP_TipoMP FROM Registro_Identificacao_MP WHERE fk_Funcionarios_IDFuncionario = ? ORDER BY DataHoraIdentificacao DESC`, [id]
-    );
-    const [movimentacoes] = await pool.query(
-        `SELECT DataHoraMovimento, fk_Estoque_MP_BarCode, QuantidadeMovida, OperacaoValida, TipoErro FROM Registro_Movimentacao WHERE fk_Funcionarios_IDFuncionario = ? ORDER BY DataHoraMovimento DESC`, [id]
-    );
-    
-    responseData.registros = {
-        recebimentos,
-        identificacoes,
-        movimentacoes
-    };
-    
-    // SÓ CALCULA AS ESTATÍSTICAS SE HOUVER MOVIMENTAÇÕES
-    if (movimentacoes.length > 0) {
-        const [statsRows] = await pool.query(
-            `SELECT OperacaoValida, TipoErro, COUNT(*) as count FROM Registro_Movimentacao WHERE fk_Funcionarios_IDFuncionario = ? GROUP BY OperacaoValida, TipoErro`, [id]
-        );
-        
-        const totalOperacoes = statsRows.reduce((sum, row) => sum + row.count, 0);
-        const acertos = statsRows.find(r => r.OperacaoValida === 1)?.count || 0;
-        const erros = totalOperacoes - acertos;
-        const taxaAcerto = totalOperacoes > 0 ? (acertos / totalOperacoes) * 100 : 0;
-        const errosPorTipo = statsRows.filter(r => r.OperacaoValida === 0).reduce((acc, row) => { acc[row.TipoErro] = row.count; return acc; }, {});
-        
-        responseData.stats = { totalOperacoes, acertos, erros, taxaAcerto: taxaAcerto.toFixed(1), errosPorTipo };
-    }
-    }else if (Cargo === 'Inspetor de Qualidade') {
-    const [registros] = await pool.query(
-        `SELECT r.DataHoraIdentificacao, r.fk_Estoque_MP_BarCode, r.fk_Tipos_MP_TipoMP 
+            // Busca registros de todas as atividades
+            const [recebimentos] = await pool.query(
+                `SELECT DataHoraRegistro, fk_Estoque_MP_BarCode FROM Registro_Entrada_MP WHERE fk_Funcionarios_IDFuncionario = ? ORDER BY DataHoraRegistro DESC`, [id]
+            );
+            const [identificacoes] = await pool.query(
+                `SELECT DataHoraIdentificacao, fk_Estoque_MP_BarCode, fk_Tipos_MP_TipoMP FROM Registro_Identificacao_MP WHERE fk_Funcionarios_IDFuncionario = ? ORDER BY DataHoraIdentificacao DESC`, [id]
+            );
+            const [movimentacoes] = await pool.query(
+                `SELECT DataHoraMovimento, fk_Estoque_MP_BarCode, QuantidadeMovida, OperacaoValida, TipoErro FROM Registro_Movimentacao WHERE fk_Funcionarios_IDFuncionario = ? ORDER BY DataHoraMovimento DESC`, [id]
+            );
+
+            responseData.registros = {
+                recebimentos,
+                identificacoes,
+                movimentacoes
+            };
+
+            // SÓ CALCULA AS ESTATÍSTICAS SE HOUVER MOVIMENTAÇÕES
+            if (movimentacoes.length > 0) {
+                const [statsRows] = await pool.query(
+                    `SELECT OperacaoValida, TipoErro, COUNT(*) as count FROM Registro_Movimentacao WHERE fk_Funcionarios_IDFuncionario = ? GROUP BY OperacaoValida, TipoErro`, [id]
+                );
+
+                const totalOperacoes = statsRows.reduce((sum, row) => sum + row.count, 0);
+                const acertos = statsRows.find(r => r.OperacaoValida === 1)?.count || 0;
+                const erros = totalOperacoes - acertos;
+                const taxaAcerto = totalOperacoes > 0 ? (acertos / totalOperacoes) * 100 : 0;
+                const errosPorTipo = statsRows.filter(r => r.OperacaoValida === 0).reduce((acc, row) => { acc[row.TipoErro] = row.count; return acc; }, {});
+
+                responseData.stats = { totalOperacoes, acertos, erros, taxaAcerto: taxaAcerto.toFixed(1), errosPorTipo };
+            }
+        } else if (Cargo === 'Inspetor de Qualidade') {
+            const [registros] = await pool.query(
+                `SELECT r.DataHoraIdentificacao, r.fk_Estoque_MP_BarCode, r.fk_Tipos_MP_TipoMP 
          FROM Registro_Identificacao_MP r 
          WHERE r.fk_Funcionarios_IDFuncionario = ? ORDER BY r.DataHoraIdentificacao DESC`, [id]
-    );
-    // Padroniza a resposta
-    responseData.registros = { identificacoes: registros };
+            );
+            // Padroniza a resposta
+            responseData.registros = { identificacoes: registros };
 
-} else if (Cargo === 'Conferente') {
-    const [registros] = await pool.query(
-        `SELECT r.DataHoraRegistro, r.fk_Estoque_MP_BarCode, e.fk_Berco_ID, e.Prateleira_Ocupada
+        } else if (Cargo === 'Conferente') {
+            const [registros] = await pool.query(
+                `SELECT r.DataHoraRegistro, r.fk_Estoque_MP_BarCode, e.fk_Berco_ID, e.Prateleira_Ocupada
          FROM Registro_Entrada_MP r
          JOIN Estoque_MP e ON r.fk_Estoque_MP_BarCode = e.BarCode
          WHERE r.fk_Funcionarios_IDFuncionario = ? ORDER BY r.DataHoraRegistro DESC`, [id]
-    );
-    // Padroniza a resposta
-    responseData.registros = { recebimentos: registros };
+            );
+            // Padroniza a resposta
+            responseData.registros = { recebimentos: registros };
 
-} else if (Cargo === 'Alimentador de Linha') {
-    const [registros] = await pool.query(
-        `SELECT DataHoraMovimento, fk_Estoque_MP_BarCode, QuantidadeMovida, OperacaoValida, TipoErro 
+        } else if (Cargo === 'Alimentador de Linha') {
+            const [registros] = await pool.query(
+                `SELECT DataHoraMovimento, fk_Estoque_MP_BarCode, QuantidadeMovida, OperacaoValida, TipoErro 
          FROM Registro_Movimentacao 
          WHERE fk_Funcionarios_IDFuncionario = ? ORDER BY DataHoraMovimento DESC`, [id]
-    );
-    // Padroniza a resposta
-    responseData.registros = { movimentacoes: registros };
+            );
+            // Padroniza a resposta
+            responseData.registros = { movimentacoes: registros };
 
-    // Calcula as estatísticas (só faz sentido se houver registros)
-    if (registros.length > 0) {
-        const [statsRows] = await pool.query(
-            `SELECT OperacaoValida, TipoErro, COUNT(*) as count 
+            // Calcula as estatísticas (só faz sentido se houver registros)
+            if (registros.length > 0) {
+                const [statsRows] = await pool.query(
+                    `SELECT OperacaoValida, TipoErro, COUNT(*) as count 
              FROM Registro_Movimentacao 
              WHERE fk_Funcionarios_IDFuncionario = ? GROUP BY OperacaoValida, TipoErro`, [id]
-        );
-        
-        const totalOperacoes = statsRows.reduce((sum, row) => sum + row.count, 0);
-        const acertos = statsRows.find(r => r.OperacaoValida === 1)?.count || 0;
-        const erros = totalOperacoes - acertos;
-        const taxaAcerto = totalOperacoes > 0 ? (acertos / totalOperacoes) * 100 : 0;
-        const errosPorTipo = statsRows.filter(r => r.OperacaoValida === 0).reduce((acc, row) => { acc[row.TipoErro] = row.count; return acc; }, {});
-        
-        responseData.stats = { totalOperacoes, acertos, erros, taxaAcerto: taxaAcerto.toFixed(1), errosPorTipo };
-    }
-}
-        
+                );
+
+                const totalOperacoes = statsRows.reduce((sum, row) => sum + row.count, 0);
+                const acertos = statsRows.find(r => r.OperacaoValida === 1)?.count || 0;
+                const erros = totalOperacoes - acertos;
+                const taxaAcerto = totalOperacoes > 0 ? (acertos / totalOperacoes) * 100 : 0;
+                const errosPorTipo = statsRows.filter(r => r.OperacaoValida === 0).reduce((acc, row) => { acc[row.TipoErro] = row.count; return acc; }, {});
+
+                responseData.stats = { totalOperacoes, acertos, erros, taxaAcerto: taxaAcerto.toFixed(1), errosPorTipo };
+            }
+        }
+
         res.json(responseData);
 
     } catch (error) {
@@ -1021,7 +1047,7 @@ app.get('/api/dashboard/funcionario/:id', requireLogin, async (req, res) => {
 // API para VERIFICAR existência de Email ou CPF
 app.post('/api/admin/employees/check', requireLogin, requireAdmin, async (req, res) => {
     const { email, cpf } = req.body;
-    
+
     // Remove qualquer formatação do CPF para a busca
     const unmaskedCpf = cpf ? cpf.replace(/\D/g, '') : null;
 
@@ -1044,7 +1070,7 @@ app.post('/api/admin/employees/check', requireLogin, requireAdmin, async (req, r
         }
 
         query += ` ${conditions.join(' OR ')}`;
-        
+
         const [rows] = await pool.query(query, params);
 
         const emailExists = rows.some(row => row.Email === email);
@@ -1101,7 +1127,7 @@ app.post('/api/qualidade/finalizar', requireLogin, async (req, res) => {
     } = req.body;
     const funcionarioId = req.session.userId;
     const nomeOperador = req.session.nome;
-    
+
     let connection;
     try {
         connection = await pool.getConnection();
@@ -1120,7 +1146,7 @@ app.post('/api/qualidade/finalizar', requireLogin, async (req, res) => {
             `INSERT INTO Registro_Identificacao_MP (DataHoraIdentificacao, fk_Funcionarios_IDFuncionario, fk_Tipos_MP_TipoMP, fk_Estoque_MP_BarCode) VALUES (?, ?, ?, ?)`,
             [new Date(), funcionarioId, denominacaoMaterial, barcode]
         );
-        
+
         await connection.commit();
 
         // Após salvar, busca todos os dados para a etiqueta
@@ -1176,7 +1202,7 @@ app.get('/api/maquina/:id/compatibilidades', requireLogin, async (req, res) => {
 // Busca a localização (Berço/Prateleira) do lote mais antigo de um tipo de material
 app.get('/api/material/localizacao', requireLogin, async (req, res) => {
     // Pega o parâmetro da query string
-    const { tipo } = req.query; 
+    const { tipo } = req.query;
 
     if (!tipo) {
         return res.status(400).json({ success: false, message: 'O tipo de material é obrigatório.' });
@@ -1196,11 +1222,11 @@ app.get('/api/material/localizacao', requireLogin, async (req, res) => {
              LIMIT 1`,
             [tipoDecodificado]
         );
-        
+
         if (lotes.length === 0) {
             return res.status(404).json({ success: false, message: `Nenhum lote de '${tipoDecodificado}' disponível no estoque.` });
         }
-        
+
         res.json({ success: true, localizacao: lotes[0] });
 
     } catch (error) {
@@ -1215,7 +1241,7 @@ app.get('/api/material/localizacao', requireLogin, async (req, res) => {
 // Função auxiliar para registrar movimentações inválidas de forma segura
 async function logarMovimentacaoInvalida(dados) {
     const { tipoErro, maquinaId, funcionarioId, barcodeEsperado, barcodeLido } = dados;
-    
+
     // Verifica se o barcode esperado existe para manter a integridade do FK, se possível
     const [rows] = await pool.query('SELECT BarCode FROM Estoque_MP WHERE BarCode = ?', [barcodeEsperado]);
     const fkBarcode = rows.length > 0 ? barcodeEsperado : null;
@@ -1231,7 +1257,7 @@ async function logarMovimentacaoInvalida(dados) {
 // ROTA Valida o material escaneado contra o material esperado
 app.post('/api/movimentacao/validar-material', requireLogin, async (req, res) => {
     const { maquinaId, materialEsperadoBarcode, materialLidoBarcode } = req.body;
-    
+
     if (materialLidoBarcode === materialEsperadoBarcode) {
         return res.json({ success: true, message: 'Material correto.' });
     }
@@ -1283,10 +1309,10 @@ app.post('/api/movimentacao/finalizar', requireLogin, async (req, res) => {
             await connection.rollback();
             return res.status(400).json({ success: false, message: 'Lote não encontrado ou quantidade insuficiente no estoque.' });
         }
-        
+
         const novaQuantidade = loteRows[0].Quantidade - quantidadeMovida;
         await connection.query('UPDATE Estoque_MP SET Quantidade = ? WHERE BarCode = ?', [novaQuantidade, materialBarcode]);
-        
+
         await connection.query(
             `INSERT INTO Registro_Movimentacao 
              (DataHoraMovimento, QuantidadeMovida, fk_Estoque_MP_BarCode, BarcodeLido, fk_Maquina_Identificacao, fk_Funcionarios_IDFuncionario, OperacaoValida, TipoErro) 
@@ -1337,5 +1363,5 @@ app.post('/api/contact', async (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`Servidor rodando em http://localhost:${port}`);
+    console.log(`Servidor rodando em http://localhost:${port}`);
 });

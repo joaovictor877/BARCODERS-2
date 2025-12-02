@@ -1,21 +1,6 @@
-// js/facial-login.js (atualizado)
+// js/facial-login.js (Server-Side Recognition)
 
-const MODEL_URL = '/models';
-const THRESHOLD = 0.45;
-
-let video, canvas, displaySize, storedDescriptor = null;
-
-async function loadModels() {
-  try {
-    await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
-    await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
-    await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
-    console.log('Modelos face-api.js carregados com sucesso!');
-  } catch (err) {
-    console.error('Erro ao carregar models:', err);
-    showError('Erro ao carregar modelos de IA. Verifique conexão.');
-  }
-}
+let video, canvas, displaySize;
 
 async function iniciarLoginFacial() {
   const id = document.getElementById('employeeId').value.trim();
@@ -25,25 +10,7 @@ async function iniciarLoginFacial() {
   }
 
   try {
-    // 1. Busca dados do funcionário no backend
-    const response = await fetch(`/api/funcionario/${id}`);
-    if (!response.ok) {
-      const text = await response.text();  // Lê como texto para debug
-      console.error('Resposta não-OK:', text);  // Log para ver o HTML
-      throw new Error(`Erro no servidor: ${response.status} - ${text.substring(0, 100)}...`);
-    }
-    const data = await response.json();
-    const { funcionario } = data;
-    if (!funcionario.Face_Embedding) {
-      throw new Error('Funcionário sem foto facial cadastrada. Contate o administrador.');
-    }
-
-    // Converte embedding para Float32Array
-    storedDescriptor = new Float32Array(JSON.parse(funcionario.Face_Embedding));
-    console.log('Embedding facial carregado para ID:', id);
-
-    // 2. Carrega models e setup câmera
-    await loadModels();
+    // 1. Setup câmera
     setupCamera();
 
     document.getElementById('cameraSection').classList.remove('hidden');
@@ -59,12 +26,12 @@ function setupCamera() {
   video = document.getElementById('video');
   canvas = document.getElementById('canvas');
 
-  navigator.mediaDevices.getUserMedia({ 
-    video: { 
-      width: { ideal: 640 }, 
+  navigator.mediaDevices.getUserMedia({
+    video: {
+      width: { ideal: 640 },
       height: { ideal: 480 },
       facingMode: 'user'  // Frontal para selfie
-    } 
+    }
   })
     .then(stream => {
       video.srcObject = stream;
@@ -74,8 +41,7 @@ function setupCamera() {
         displaySize = { width: video.videoWidth, height: video.videoHeight };
         canvas.width = displaySize.width;
         canvas.height = displaySize.height;
-        const context = canvas.getContext('2d', { willReadFrequently: true });        context.fillStyle = 'rgba(0,0,0,0.5)';
-        context.fillRect(0, 0, canvas.width, canvas.height);  // Overlay semi-transparente
+        // Não precisamos desenhar overlay aqui, mas mantemos o canvas pronto
       };
     })
     .catch(err => {
@@ -88,49 +54,38 @@ function setupCamera() {
 }
 
 async function capturarERecognize() {
-  if (!storedDescriptor) return showError('Embedding não carregado. Reinicie o login.');
+  const id = document.getElementById('employeeId').value.trim();
+  if (!id) return showError('ID do funcionário não encontrado.');
 
-  const context = canvas.getContext('2d', { willReadFrequently: true });  context.drawImage(video, 0, 0, displaySize.width, displaySize.height);
+  // Captura frame atual para o canvas
+  const context = canvas.getContext('2d');
+  context.drawImage(video, 0, 0, displaySize.width, displaySize.height);
+
+  // Converte para Base64
+  const imageData = canvas.toDataURL('image/jpeg');
 
   try {
-    // Detecta face e gera descriptor
-    const input = await faceapi.detectSingleFace(canvas, new faceapi.SsdMobilenetv1Options())
-      .withFaceLandmarks()
-      .withFaceDescriptor();
+    showError('Processando... Aguarde.'); // Usa msg de erro como status temporário ou cria um novo elemento de status
 
-    if (!input) {
-      showError('Nenhuma face detectada. Certifique-se de que o rosto está centralizado e bem iluminado.');
-      return;
-    }
+    const response = await fetch('/api/login-facial', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, image: imageData })
+    });
 
-    const capturedDescriptor = input.descriptor;
-    const distance = faceapi.euclideanDistance(capturedDescriptor, storedDescriptor);
+    const data = await response.json();
 
-    console.log('Distância euclidiana calculada:', distance.toFixed(4));
-
-    if (distance < THRESHOLD) {
-      // Match! Envia para backend criar session
-      const id = document.getElementById('employeeId').value;
-      const loginResponse = await fetch('/api/login-facial', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id })
-      });
-      const loginData = await loginResponse.json();
-      if (loginResponse.ok) {
-        showSuccess(loginData.message);
-        setTimeout(() => {
-          window.location.href = loginData.redirect;
-        }, 2000);
-      } else {
-        showError(loginData.message);
-      }
+    if (response.ok) {
+      showSuccess(data.message);
+      setTimeout(() => {
+        window.location.href = data.redirect;
+      }, 2000);
     } else {
-      showError(`Rosto não reconhecido (distância: ${distance.toFixed(2)}). Tente novamente com melhor iluminação ou ângulo.`);
+      showError(data.message);
     }
   } catch (err) {
-    console.error('Erro na detecção/recognition:', err);
-    showError('Erro na análise facial: ' + err.message);
+    console.error('Erro na requisição:', err);
+    showError('Erro ao conectar com o servidor: ' + err.message);
   }
 }
 

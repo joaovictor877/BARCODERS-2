@@ -117,7 +117,7 @@ function generateModalContent(type, editId) {
     } else if (type === 'machine') {
         content += `
             <input type="text" id="machine-modelo" placeholder="Modelo da Máquina" class="w-full px-4 py-3 border rounded-lg" required>
-            <input type="text" id="machine-identificacao" placeholder="Identificação Única" class="w-full px-4 py-3 border rounded-lg" required ${isEdit ? 'readonly' : ''}>
+
         `;
     } else if (type === 'material') {
         content += `
@@ -306,7 +306,7 @@ async function loadMachineData(id) {
         if (response.ok) {
             const machine = data.machine;
             document.getElementById('machine-modelo').value = machine.Modelo || '';
-            document.getElementById('machine-identificacao').value = machine.Identificacao || '';
+
         }
     } catch (err) {
         console.error('Erro ao carregar machine:', err);
@@ -321,7 +321,7 @@ async function loadMaterialData(id) {
         const data = await response.json();
         if (response.ok) {
             const material = data.material;
-            document.getElementById('material-tipo').value = material.TipoMP || '';
+            document.getElementById('material-tipomp').value = material.TipoMP || '';
         }
     } catch (err) {
         console.error('Erro ao carregar material:', err);
@@ -339,7 +339,10 @@ function closeModal() {
 document.addEventListener('submit', async (e) => {
     e.preventDefault();
     const form = e.target;
-    const id = form.querySelector('input[type=hidden]').value;
+    // Ignora forms sem hidden input (como compatibility-form)
+    const hiddenInput = form.querySelector('input[type=hidden]');
+    if (!hiddenInput) return;
+    const id = hiddenInput.value;
     let url, data, method = 'POST';
 
     if (form.id === 'employee-form') {
@@ -361,7 +364,7 @@ document.addEventListener('submit', async (e) => {
         }
         data = {
             modelo: document.getElementById('machine-modelo').value,
-            identificacao: document.getElementById('machine-identificacao').value
+
         };
     } else if (form.id === 'material-form') {
         url = '/api/admin/materials';
@@ -486,7 +489,7 @@ async function loadCompatibilities() {
                     <td class="px-4 py-2">${comp.TipoMP}</td>
                     <td class="px-4 py-2">${comp.Modelo}</td>
                     <td class="px-4 py-2">
-                        <button onclick="deleteCompatibility(${comp.ID})" class="text-red-600 hover:underline">Deletar</button>
+                        <button onclick="deleteCompatibility('${comp.fk_Tipos_MP_TipoMP}', ${comp.fk_Maquina_Identificacao})" class="text-red-600 hover:underline">Deletar</button>
                     </td>
                 </tr>
             `).join('');
@@ -551,11 +554,11 @@ async function addCompatibility(e) {
 }
 
 // Deletar compatibilidade
-async function deleteCompatibility(id) {
+async function deleteCompatibility(tipoMP, identificacao) {
     if (!confirm('Confirmar exclusão da compatibilidade?')) return;
 
     try {
-        const response = await fetch(`/api/admin/compatibilities/${id}`, { method: 'DELETE' });
+        const response = await fetch(`/api/admin/compatibilities?tipoMP=${encodeURIComponent(tipoMP)}&identificacao=${identificacao}`, { method: 'DELETE' });
         if (response.ok) {
             alert('Compatibilidade deletada!');
             loadCompatibilities();
