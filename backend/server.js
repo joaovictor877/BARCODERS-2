@@ -9,7 +9,6 @@ import session from 'express-session';
 import pool from './db.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { loadModels, recognizeFace } from './faceRecognition.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -66,10 +65,10 @@ const requireLogin = (req, res, next) => {
 //Login facial 
 //Login facial 
 app.post('/api/login-facial', async (req, res) => {
-    const { id, image } = req.body;
+    const { id, descriptor } = req.body;
     try {
         const [rows] = await pool.query(
-            'SELECT IDFuncionario, Nome, NivelAcesso, Cargo, Face_Embedding FROM Funcionarios WHERE IDFuncionario  = ?',
+            'SELECT IDFuncionario, Nome, NivelAcesso, Cargo, Face_Embedding FROM Funcionarios WHERE IDFuncionario = ?',
             [id]
         );
         if (rows.length === 0) {
@@ -81,15 +80,13 @@ app.post('/api/login-facial', async (req, res) => {
             return res.status(400).json({ message: 'Funcionário sem biometria cadastrada.' });
         }
 
-        if (!image) {
-            return res.status(400).json({ message: 'Imagem facial não fornecida.' });
+        if (!descriptor || !Array.isArray(descriptor)) {
+            return res.status(400).json({ message: 'Descritor facial inválido.' });
         }
 
-        // Remove header do base64 se existir
-        const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
-        const imageBuffer = Buffer.from(base64Data, 'base64');
-
-        const result = await recognizeFace(imageBuffer, funcionario.Face_Embedding);
+        // Importa a função de comparação
+        const { compareFaceDescriptors } = await import('./faceRecognition.js');
+        const result = await compareFaceDescriptors(descriptor, funcionario.Face_Embedding);
 
         if (result.match) {
             // Cria session

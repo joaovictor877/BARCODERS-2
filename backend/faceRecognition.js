@@ -5,67 +5,15 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Try to use canvas if available (local), otherwise face-api will use built-in
-let canvas;
-try {
-    canvas = await import('canvas');
-    const { Canvas, Image, ImageData } = canvas.default;
-    faceapi.env.monkeyPatch({ Canvas, Image, ImageData });
-    console.log('Canvas nativo carregado com sucesso');
-} catch (err) {
-    console.warn('Canvas não disponível, usando implementação face-api.js', err.message);
-}
-
-const MODEL_URL = path.join(__dirname, '../models');
-let modelsLoaded = false;
-
-export async function loadModels() {
-    if (modelsLoaded) return;
+// Função simplificada que apenas compara descritores
+// O reconhecimento facial acontece no frontend
+export async function compareFaceDescriptors(capturedDescriptorArray, storedDescriptorJson) {
     try {
-        console.log('Carregando modelos de reconhecimento facial...');
-        await faceapi.nets.ssdMobilenetv1.loadFromDisk(MODEL_URL);
-        await faceapi.nets.faceLandmark68Net.loadFromDisk(MODEL_URL);
-        await faceapi.nets.faceRecognitionNet.loadFromDisk(MODEL_URL);
-        modelsLoaded = true;
-        console.log('Modelos carregados com sucesso!');
-    } catch (err) {
-        console.error('Erro ao carregar modelos:', err);
-        throw err;
-    }
-}
-
-export async function recognizeFace(imageBuffer, storedDescriptorJson) {
-    if (!modelsLoaded) await loadModels();
-
-    try {
-        // Load image from buffer - use canvas if available, otherwise use fetch
-        let img;
-        if (canvas) {
-            const { loadImage } = canvas.default;
-            img = await loadImage(imageBuffer);
-        } else {
-            // Convert buffer to base64 data URL for face-api
-            const base64 = imageBuffer.toString('base64');
-            const dataUrl = `data:image/jpeg;base64,${base64}`;
-            
-            // Use fetch API to load image (works in Node.js 18+)
-            const response = await fetch(dataUrl);
-            const blob = await response.blob();
-            img = await faceapi.bufferToImage(blob);
-        }
-
-        // Detect face
-        const detection = await faceapi.detectSingleFace(img).withFaceLandmarks().withFaceDescriptor();
-
-        if (!detection) {
-            return { match: false, message: 'Nenhuma face detectada na imagem.' };
-        }
-
-        const capturedDescriptor = detection.descriptor;
+        const capturedDescriptor = new Float32Array(capturedDescriptorArray);
         const storedDescriptor = new Float32Array(JSON.parse(storedDescriptorJson));
 
         const distance = faceapi.euclideanDistance(capturedDescriptor, storedDescriptor);
-        const THRESHOLD = 0.45; // Same as frontend
+        const THRESHOLD = 0.45;
 
         console.log(`Distância calculada: ${distance.toFixed(4)}`);
 
@@ -76,7 +24,18 @@ export async function recognizeFace(imageBuffer, storedDescriptorJson) {
         }
 
     } catch (err) {
-        console.error('Erro no reconhecimento facial:', err);
-        throw new Error('Erro interno no reconhecimento facial.');
+        console.error('Erro na comparação de descritores:', err);
+        throw new Error('Erro interno na comparação facial.');
+    }
+}
+
+// Mantém compatibilidade com código antigo (deprecated)
+export async function loadModels() {
+    console.warn('loadModels() deprecated - reconhecimento facial agora acontece no frontend');
+}
+
+export async function recognizeFace(imageBuffer, storedDescriptorJson) {
+    throw new Error('recognizeFace() deprecated - use compareFaceDescriptors() no frontend');
+}
     }
 }

@@ -57,20 +57,28 @@ async function capturarERecognize() {
   const id = document.getElementById('employeeId').value.trim();
   if (!id) return showError('ID do funcionário não encontrado.');
 
-  // Captura frame atual para o canvas
-  const context = canvas.getContext('2d');
-  context.drawImage(video, 0, 0, displaySize.width, displaySize.height);
-
-  // Converte para Base64
-  const imageData = canvas.toDataURL('image/jpeg');
-
   try {
-    showError('Processando... Aguarde.'); // Usa msg de erro como status temporário ou cria um novo elemento de status
+    showError('Detectando rosto... Aguarde.');
+
+    // Detecta rosto e extrai descriptor
+    const detections = await faceapi
+      .detectSingleFace(video)
+      .withFaceLandmarks()
+      .withFaceDescriptor();
+
+    if (!detections) {
+      return showError('Nenhum rosto detectado. Posicione-se melhor e tente novamente.');
+    }
+
+    // Converte descriptor para array para enviar ao servidor
+    const descriptor = Array.from(detections.descriptor);
+
+    showError('Processando... Aguarde.');
 
     const response = await fetch('/api/login-facial', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, image: imageData })
+      body: JSON.stringify({ id, descriptor })
     });
 
     const data = await response.json();
@@ -85,7 +93,7 @@ async function capturarERecognize() {
     }
   } catch (err) {
     console.error('Erro na requisição:', err);
-    showError('Erro ao conectar com o servidor: ' + err.message);
+    showError('Erro ao processar reconhecimento facial: ' + err.message);
   }
 }
 
