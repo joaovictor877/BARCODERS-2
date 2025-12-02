@@ -7,6 +7,9 @@ const pool = mysql.createPool({
   password: 'Juca12@!#',
   database: 'estoque',
   port: 3306,
+  ssl: {
+    rejectUnauthorized: false
+  },
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0

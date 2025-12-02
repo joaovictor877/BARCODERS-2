@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastrar Biometria Facial</title>
+    <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@latest/dist/face-api.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-8">
+        <h1 class="text-3xl font-bold mb-6 text-center">Cadastrar Biometria Facial</h1>
+        
+        <div class="mb-6">
+            <label class="block text-sm font-medium mb-2">ID do Funcionário:</label>
+            <input type="number" id="employeeId" class="w-full border rounded px-4 py-2" placeholder="Digite seu ID">
+        </div>
+
+        <button onclick="iniciarCadastro()" class="w-full bg-blue-600 text-white py-3 rounded hover:bg-blue-700 mb-4">
+            Iniciar Cadastro de Face
+        </button>
+
+        <div id="cameraSection" class="hidden">
+            <div class="relative mb-4">
+                <video id="video" autoplay muted class="w-full rounded border"></video>
+                <canvas id="canvas" class="hidden"></canvas>
+            </div>
+            
+            <button onclick="capturarFace()" class="w-full bg-green-600 text-white py-3 rounded hover:bg-green-700">
+                Capturar e Salvar Face
+            </button>
+        </div>
+
+        <div id="result" class="mt-4 hidden">
+            <p id="message" class="p-4 rounded"></p>
+        </div>
+    </div>
+
+    <script>
+        let video, canvas, modelsLoaded = false;
+
+        async function loadModels() {
+            if (modelsLoaded) return;
+            const MODEL_URL = '/models';
+            await Promise.all([
+                faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
+                faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+                faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+            ]);
+            modelsLoaded = true;
+            console.log('Modelos carregados!');
+        }
+
+        async function iniciarCadastro() {
+            const id = document.getElementById('employeeId').value;
+            if (!id) {
+                alert('Digite seu ID de funcionário!');
+                return;
+            }
+
+            showMessage('Carregando modelos...', 'blue');
+            await loadModels();
+
+            video = document.getElementById('video');
+            canvas = document.getElementById('canvas');
+
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { width: 640, height: 480, facingMode: 'user' } 
+            });
+            
+            video.srcObject = stream;
+            document.getElementById('cameraSection').classList.remove('hidden');
+            showMessage('Posicione seu rosto e clique em Capturar', 'green');
+        }
+
+        async function capturarFace() {
+            showMessage('Detectando rosto...', 'blue');
+
+            const detection = await faceapi
+                .detectSingleFace(video)
+                .withFaceLandmarks()
+                .withFaceDescriptor();
+
+            if (!detection) {
+                showMessage('Nenhum rosto detectado! Tente novamente.', 'red');
+                return;
+            }
+
+            const descriptor = Array.from(detection.descriptor);
+            const id = document.getElementById('employeeId').value;
+
+            showMessage('Salvando biometria...', 'blue');
+
+            const response = await fetch('/api/cadastrar-face', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, descriptor })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                showMessage('✅ ' + data.message, 'green');
+                video.srcObject.getTracks().forEach(track => track.stop());
+            } else {
+                showMessage('❌ ' + data.message, 'red');
+            }
+        }
+
+        function showMessage(msg, color) {
+            const messageEl = document.getElementById('message');
+            const colors = {
+                blue: 'bg-blue-100 text-blue-800',
+                green: 'bg-green-100 text-green-800',
+                red: 'bg-red-100 text-red-800'
+            };
+            messageEl.className = 'p-4 rounded ' + colors[color];
+            messageEl.textContent = msg;
+            document.getElementById('result').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>

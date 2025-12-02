@@ -66,11 +66,18 @@ const requireLogin = (req, res, next) => {
 //Login facial 
 app.post('/api/login-facial', async (req, res) => {
     const { id, descriptor } = req.body;
+    
+    console.log('Login facial - ID:', id);
+    console.log('Login facial - Descriptor recebido:', descriptor ? 'sim' : 'não');
+    
     try {
         const [rows] = await pool.query(
             'SELECT IDFuncionario, Nome, NivelAcesso, Cargo, Face_Embedding FROM Funcionarios WHERE IDFuncionario = ?',
             [id]
         );
+        
+        console.log('Funcionários encontrados:', rows.length);
+        
         if (rows.length === 0) {
             return res.status(404).json({ message: 'Funcionário não encontrado.' });
         }
@@ -81,12 +88,17 @@ app.post('/api/login-facial', async (req, res) => {
         }
 
         if (!descriptor || !Array.isArray(descriptor)) {
+            console.log('Descritor inválido:', typeof descriptor);
             return res.status(400).json({ message: 'Descritor facial inválido.' });
         }
 
+        console.log('Comparando descritores...');
+        
         // Importa a função de comparação
         const { compareFaceDescriptors } = await import('./faceRecognition.js');
         const result = await compareFaceDescriptors(descriptor, funcionario.Face_Embedding);
+
+        console.log('Resultado da comparação:', result);
 
         if (result.match) {
             // Cria session
@@ -101,7 +113,74 @@ app.post('/api/login-facial', async (req, res) => {
 
     } catch (error) {
         console.error('Erro no login facial:', error);
-        res.status(500).json({ message: 'Erro interno no login.' });
+        console.error('Stack:', error.stack);
+        res.status(500).json({ message: 'Erro interno no login: ' + error.message });
+    }
+});
+
+// Rota para cadastrar biometria facial (SEM autenticação para primeiro admin)
+app.post('/api/cadastrar-face', async (req, res) => {
+    const { id, descriptor } = req.body;
+    
+    console.log('Cadastro de face - ID:', id);
+    
+    try {
+        if (!descriptor || !Array.isArray(descriptor)) {
+            return res.status(400).json({ message: 'Descritor facial inválido.' });
+        }
+
+        // Verifica se funcionário existe
+        const [rows] = await pool.query(
+            'SELECT IDFuncionario, Nome FROM Funcionarios WHERE IDFuncionario = ?',
+            [id]
+        );
+
+        if (rows.length === 0) {
+            return res.status(404).json({ message: 'Funcionário não encontrado. Execute o SQL primeiro!' });
+        }
+
+        const funcionario = rows[0];
+
+        // Salva o descriptor como JSON
+        const descriptorJson = JSON.stringify(descriptor);
+        
+        await pool.query(
+            'UPDATE Funcionarios SET Face_Embedding = ? WHERE IDFuncionario = ?',
+            [descriptorJson, id]
+        );
+
+        console.log('Biometria cadastrada para:', funcionario.Nome);
+        
+        res.json({ 
+            success: true, 
+            message: `Biometria cadastrada com sucesso para ${funcionario.Nome}! Agora você pode fazer login facial.` 
+        });
+
+    } catch (error) {
+        console.error('Erro ao cadastrar face:', error);
+        res.status(500).json({ message: 'Erro ao salvar biometria: ' + error.message });
+    }
+});
+
+// Rota de teste do banco de dados
+app.get('/api/test-db', async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT COUNT(*) as total FROM Funcionarios');
+        const [tables] = await pool.query('SHOW TABLES');
+        
+        res.json({
+            success: true,
+            message: 'Conexão com banco de dados OK!',
+            funcionarios: rows[0].total,
+            tabelas: tables.map(t => Object.values(t)[0])
+        });
+    } catch (error) {
+        console.error('Erro ao testar banco:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao conectar com banco de dados',
+            error: error.message
+        });
     }
 });
 
@@ -110,6 +189,32 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(projectRoot, 'index.html'));
 });
 
+// Rota para página de cadastro de face
+app.get('/cadastro-face.html', (req, res) => {
+    res.sendFile(path.join(projectRoot, 'cadastro-face.html'));
+});
+
+// Rota de teste do banco de dados
+app.get('/api/test-db', async (req, res) => {
+    try {
+        const [rows] = await pool.query('SELECT COUNT(*) as total FROM Funcionarios');
+        const [tables] = await pool.query('SHOW TABLES');
+        
+        res.json({
+            success: true,
+            message: 'Conexão com banco de dados OK!',
+            funcionarios: rows[0].total,
+            tabelas: tables.map(t => Object.values(t)[0])
+        });
+    } catch (error) {
+        console.error('Erro ao testar banco:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao conectar com banco de dados',
+            error: error.message
+        });
+    }
+});
 
 // Rota do Lobby (protegida)
 app.get('/lobby', requireLogin, (req, res) => {

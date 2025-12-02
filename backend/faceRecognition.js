@@ -37,5 +37,3 @@ export async function loadModels() {
 export async function recognizeFace(imageBuffer, storedDescriptorJson) {
     throw new Error('recognizeFace() deprecated - use compareFaceDescriptors() no frontend');
 }
-    }
-}
