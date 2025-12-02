@@ -1,14 +1,20 @@
 import faceapi from 'face-api.js';
-import canvas from 'canvas';
-const { Canvas, Image, ImageData, loadImage } = canvas;
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Configure face-api to use canvas
-faceapi.env.monkeyPatch({ Canvas, Image, ImageData });
+// Try to use canvas if available (local), otherwise face-api will use built-in
+let canvas;
+try {
+    canvas = await import('canvas');
+    const { Canvas, Image, ImageData } = canvas.default;
+    faceapi.env.monkeyPatch({ Canvas, Image, ImageData });
+    console.log('Canvas nativo carregado com sucesso');
+} catch (err) {
+    console.warn('Canvas não disponível, usando implementação face-api.js', err.message);
+}
 
 const MODEL_URL = path.join(__dirname, '../models');
 let modelsLoaded = false;
@@ -32,8 +38,21 @@ export async function recognizeFace(imageBuffer, storedDescriptorJson) {
     if (!modelsLoaded) await loadModels();
 
     try {
-        // Load image from buffer
-        const img = await loadImage(imageBuffer);
+        // Load image from buffer - use canvas if available, otherwise use fetch
+        let img;
+        if (canvas) {
+            const { loadImage } = canvas.default;
+            img = await loadImage(imageBuffer);
+        } else {
+            // Convert buffer to base64 data URL for face-api
+            const base64 = imageBuffer.toString('base64');
+            const dataUrl = `data:image/jpeg;base64,${base64}`;
+            
+            // Use fetch API to load image (works in Node.js 18+)
+            const response = await fetch(dataUrl);
+            const blob = await response.blob();
+            img = await faceapi.bufferToImage(blob);
+        }
 
         // Detect face
         const detection = await faceapi.detectSingleFace(img).withFaceLandmarks().withFaceDescriptor();
