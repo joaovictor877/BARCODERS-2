@@ -1,6 +1,29 @@
 // js/facial-login.js (Server-Side Recognition)
 
 let video, canvas, displaySize;
+let modelsLoaded = false;
+
+// Carrega os modelos do face-api.js
+async function loadFaceApiModels() {
+  if (modelsLoaded) return;
+  
+  try {
+    console.log('Carregando modelos face-api.js...');
+    const MODEL_URL = '/models';
+    
+    await Promise.all([
+      faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
+      faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+      faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+    ]);
+    
+    modelsLoaded = true;
+    console.log('Modelos carregados com sucesso!');
+  } catch (err) {
+    console.error('Erro ao carregar modelos:', err);
+    throw new Error('Falha ao carregar modelos de reconhecimento facial');
+  }
+}
 
 async function iniciarLoginFacial() {
   const id = document.getElementById('employeeId').value.trim();
@@ -10,12 +33,17 @@ async function iniciarLoginFacial() {
   }
 
   try {
-    // 1. Setup câmera
+    // Carrega modelos primeiro
+    showError('Carregando modelos... Aguarde.');
+    await loadFaceApiModels();
+    
+    // Setup câmera
     setupCamera();
 
     document.getElementById('cameraSection').classList.remove('hidden');
     document.getElementById('status').textContent = 'Posicione o rosto na moldura e clique "Capturar Rosto".';
     document.getElementById('captureBtn').focus();
+    showError(''); // Limpa mensagem
   } catch (err) {
     console.error('Erro no login facial:', err);
     showError(err.message);
@@ -110,9 +138,13 @@ function showSuccess(msg) {
 
 function showError(msg) {
   document.getElementById('successMsg').classList.add('hidden');
-  document.getElementById('errorMsg').textContent = msg;
-  document.getElementById('errorMsg').classList.remove('hidden');
-  document.getElementById('result').classList.remove('hidden');
+  if (msg) {
+    document.getElementById('errorMsg').textContent = msg;
+    document.getElementById('errorMsg').classList.remove('hidden');
+    document.getElementById('result').classList.remove('hidden');
+  } else {
+    document.getElementById('errorMsg').classList.add('hidden');
+  }
 }
 
 // Event listeners
