@@ -56,7 +56,7 @@ function openModal(type, editId) {
         if (editId) {
             loadEmployeeData(editId);
         }
-        
+
     } else if (type === 'machine') {
         if (editId) loadMachineData(editId);
     } else if (type === 'material') {
@@ -125,9 +125,12 @@ function generateModalContent(type, editId) {
         `;
     }
     content += `
-            <button type="submit" class="w-full bg-indigo-600 text-white py-3 rounded-lg font-medium hover:bg-indigo-700">Salvar</button>
+            <div class="flex gap-4 mt-6">
+                <button type="button" onclick="closeModal()" class="w-1/2 bg-gray-200 text-gray-800 py-3 rounded-lg font-medium hover:bg-gray-300 transition-colors">Cancelar</button>
+                <button type="submit" class="w-1/2 bg-indigo-600 text-white py-3 rounded-lg font-medium hover:bg-indigo-700 transition-colors">Salvar</button>
+            </div>
             </div></form>
-            <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl">&times;</button>`;
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-400 hover:text-red-600 text-3xl font-bold transition-colors" title="Fechar">&times;</button>`;
     return content;
 }
 
@@ -179,28 +182,28 @@ function setupAdminCamera() {
             stream.getTracks().forEach(track => track.stop());
         }
 
-        navigator.mediaDevices.getUserMedia({ 
-            video: { 
+        navigator.mediaDevices.getUserMedia({
+            video: {
                 deviceId: selectedDeviceId ? { exact: selectedDeviceId } : undefined,
-                width: { ideal: 320 }, 
+                width: { ideal: 320 },
                 height: { ideal: 240 },
                 facingMode: 'user'
-            } 
+            }
         })
-        .then(newStream => {
-            stream = newStream;
-            video.srcObject = stream;
-            video.onloadedmetadata = () => {
-                video.play();
-                displaySize = { width: video.videoWidth, height: video.videoHeight };
-                canvas.width = displaySize.width;
-                canvas.height = displaySize.height;
-            };
-        })
-        .catch(err => {
-            console.error('Erro câmera admin:', err);
-            document.getElementById('facial-status').textContent = `Erro na câmera: ${err.message}.`;
-        });
+            .then(newStream => {
+                stream = newStream;
+                video.srcObject = stream;
+                video.onloadedmetadata = () => {
+                    video.play();
+                    displaySize = { width: video.videoWidth, height: video.videoHeight };
+                    canvas.width = displaySize.width;
+                    canvas.height = displaySize.height;
+                };
+            })
+            .catch(err => {
+                console.error('Erro câmera admin:', err);
+                document.getElementById('facial-status').textContent = `Erro na câmera: ${err.message}.`;
+            });
     };
 
     // Lista os dispositivos de vídeo
@@ -218,13 +221,13 @@ function setupAdminCamera() {
                     });
                     controlsContainer.classList.remove('hidden');
                 }
-                
+
                 startStream();
             } else {
-                 document.getElementById('facial-status').textContent = 'Nenhuma câmera encontrada.';
+                document.getElementById('facial-status').textContent = 'Nenhuma câmera encontrada.';
             }
         });
-    
+
     videoSelect.addEventListener('change', () => {
         selectedDeviceId = videoSelect.value;
         startStream();
@@ -233,7 +236,7 @@ function setupAdminCamera() {
 
 // Captura face no admin
 async function captureAdminFace() {
-    const context = canvas.getContext('2d', { willReadFrequently: true });    context.drawImage(video, 0, 0);
+    const context = canvas.getContext('2d', { willReadFrequently: true }); context.drawImage(video, 0, 0);
 
     try {
         const input = await faceapi.detectSingleFace(canvas, new faceapi.SsdMobilenetv1Options())
@@ -259,7 +262,7 @@ async function captureAdminFace() {
         preview.classList.remove('hidden');
 
         document.getElementById('facial-status').textContent = 'Foto e embedding capturados com sucesso! Você pode prosseguir.';
-        
+
         // Para câmera
         if (video && video.srcObject) {
             video.srcObject.getTracks().forEach(track => track.stop());

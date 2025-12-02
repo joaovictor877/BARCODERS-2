@@ -1,24 +1,37 @@
 <!-- views/movimentacao.ejs -->
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <title>Movimentação de Material</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script type="text/javascript" src="https://unpkg.com/@zxing/library@latest"></script>
     <link rel="stylesheet" href="/css/movimentacao.css"> <!-- CSS para os passos -->
 </head>
+
 <body class="bg-gray-100">
     <div class="container mx-auto px-6 py-12">
         <a href="/lobby" class="text-indigo-600">&larr; Voltar ao Lobby</a>
         <h1 class="text-4xl font-bold mb-8">Assistente de Movimentação</h1>
 
         <div class="bg-white p-8 rounded shadow-md max-w-2xl mx-auto">
-            
+
             <!-- Passo 1: Escanear Máquina -->
             <div id="passo-1-maquina" class="passo">
                 <h2 class="passo-titulo">Passo 1: Escanear a Máquina de Destino</h2>
                 <div id="scanner-container-maquina"></div>
                 <button id="iniciar-scanner-maquina" class="btn-scanner">Usar Câmera</button>
+
+                <!-- Opção Manual -->
+                <div class="mt-4 border-t pt-4">
+                    <p class="text-sm text-gray-600 mb-2">Ou digite o código manualmente:</p>
+                    <div class="flex gap-2">
+                        <input type="text" id="input-manual-maquina" class="w-full p-2 border rounded"
+                            placeholder="ID da Máquina">
+                        <button id="btn-manual-maquina"
+                            class="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800">OK</button>
+                    </div>
+                </div>
             </div>
 
             <!-- Passo 2: Selecionar Material -->
@@ -38,14 +51,36 @@
                 </div>
                 <div id="scanner-container-material"></div>
                 <button id="iniciar-scanner-material" class="btn-scanner">Usar Câmera</button>
+
+                <!-- Opção Manual -->
+                <div class="mt-4 border-t pt-4">
+                    <p class="text-sm text-gray-600 mb-2">Ou digite o código manualmente:</p>
+                    <div class="flex gap-2">
+                        <input type="text" id="input-manual-material" class="w-full p-2 border rounded"
+                            placeholder="Código do Lote">
+                        <button id="btn-manual-material"
+                            class="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800">OK</button>
+                    </div>
+                </div>
             </div>
-            
+
             <!-- Passo 4: Confirmar Máquina -->
             <div id="passo-4-confirmar" class="passo hidden">
-                 <h2 class="passo-titulo">Passo 4: Confirmar a Máquina de Destino</h2>
-                 <p class="info-box">Para finalizar, escaneie novamente o código da máquina de destino.</p>
-                 <div id="scanner-container-confirmacao"></div>
-                 <button id="iniciar-scanner-confirmacao" class="btn-scanner">Usar Câmera</button>
+                <h2 class="passo-titulo">Passo 4: Confirmar a Máquina de Destino</h2>
+                <p class="info-box">Para finalizar, escaneie novamente o código da máquina de destino.</p>
+                <div id="scanner-container-confirmacao"></div>
+                <button id="iniciar-scanner-confirmacao" class="btn-scanner">Usar Câmera</button>
+
+                <!-- Opção Manual -->
+                <div class="mt-4 border-t pt-4">
+                    <p class="text-sm text-gray-600 mb-2">Ou digite o código manualmente:</p>
+                    <div class="flex gap-2">
+                        <input type="text" id="input-manual-confirmacao" class="w-full p-2 border rounded"
+                            placeholder="ID da Máquina">
+                        <button id="btn-manual-confirmacao"
+                            class="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800">OK</button>
+                    </div>
+                </div>
             </div>
 
             <!-- Mensagens de Feedback -->
@@ -55,4 +90,5 @@
     </div>
     <script src="/js/movimentacao.js"></script>
 </body>
+
 </html>

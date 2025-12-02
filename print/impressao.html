@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Impressão de Etiqueta</title>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .etiqueta {
+            width: 10cm;
+            height: 10cm;
+            border: 2px solid #000;
+            padding: 10px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .header {
+            text-align: center;
+            font-weight: bold;
+            border-bottom: 2px solid #000;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+        }
+
+        .row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+
+        .field {
+            flex: 1;
+        }
+
+        .label {
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .value {
+            font-size: 14px;
+        }
+
+        .barcode-container {
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        @media print {
+            body {
+                padding: 0;
+                margin: 0;
+            }
+
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="no-print" style="margin-bottom: 20px;">
+        <button onclick="window.print()">Imprimir</button>
+        <button onclick="window.close()">Fechar</button>
+    </div>
+
+    <div id="etiqueta-container">
+        <!-- A etiqueta será gerada aqui -->
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const dados = JSON.parse(localStorage.getItem('dadosParaImpressao'));
+
+            if (!dados) {
+                document.getElementById('etiqueta-container').innerHTML = '<p>Nenhum dado encontrado para impressão.</p>';
+                return;
+            }
+
+            const html = `
+                <div class="etiqueta">
+                    <div class="header">ETIQUETA DE IDENTIFICAÇÃO</div>
+                    
+                    <div class="row">
+                        <div class="field">
+                            <div class="label">FORNECEDOR:</div>
+                            <div class="value">${dados.fornecedor || ''}</div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="field">
+                            <div class="label">DENOMINAÇÃO:</div>
+                            <div class="value">${dados.denominacao || ''}</div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="field">
+                            <div class="label">CÓD. PEÇA:</div>
+                            <div class="value">${dados.codPeca || ''}</div>
+                        </div>
+                        <div class="field">
+                            <div class="label">ITEM:</div>
+                            <div class="value">${dados.item || ''}</div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="field">
+                            <div class="label">OPERADOR:</div>
+                            <div class="value">${dados.operador || ''}</div>
+                        </div>
+                        <div class="field">
+                            <div class="label">DATA REC.:</div>
+                            <div class="value">${dados.dataRec || ''}</div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="field">
+                            <div class="label">QTD RECEBIDA:</div>
+                            <div class="value">${dados.qtdRecebida || ''}</div>
+                        </div>
+                        <div class="field">
+                            <div class="label">CORRIDA:</div>
+                            <div class="value">${dados.corrida || ''}</div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="field">
+                            <div class="label">OBSERVAÇÃO:</div>
+                            <div class="value">${dados.observacao || ''}</div>
+                        </div>
+                    </div>
+
+                    <div class="barcode-container">
+                        <svg id="barcode"></svg>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('etiqueta-container').innerHTML = html;
+
+            if (dados.codigoLote) {
+                JsBarcode("#barcode", dados.codigoLote, {
+                    format: "CODE128",
+                    width: 2,
+                    height: 50,
+                    displayValue: true
+                });
+            }
+
+            // Opcional: Imprimir automaticamente
+            // window.print();
+        });
+    </script>
+</body>
+
+</html>
