@@ -414,6 +414,7 @@ async function loadEmployees() {
             const tbody = document.getElementById('employees-table-body');
             tbody.innerHTML = data.employees.map(emp => `
                     <tr>
+                        <td class="px-4 py-2">${emp.IDFuncionario}</td>
                         <td class="px-4 py-2">${emp.Nome}</td>
                         <td class="px-4 py-2">${emp.Cargo}</td>
                         <td class="px-4 py-2">${emp.NivelAcesso}</td>
