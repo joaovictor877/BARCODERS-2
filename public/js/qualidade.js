@@ -123,8 +123,7 @@ videoSelect.addEventListener('change', () => {
         buscarBtn.textContent = 'Buscando...';
 
         try {
-            const response = await fetchWithAuth(`/api/lote/para-identificar/${encodeURIComponent(barcode)}`);
-            if (!response) return;
+            const response = await fetch(`/api/lote/para-identificar/${encodeURIComponent(barcode)}`);
             const result = await response.json();
 
             if (!response.ok) {
@@ -163,7 +162,7 @@ videoSelect.addEventListener('change', () => {
         data.barcode = loteBarcodeSpan.textContent;
 
         try {
-            const response = await fetchWithAuth('/api/qualidade/finalizar', {
+            const response = await fetch('/api/qualidade/finalizar', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)

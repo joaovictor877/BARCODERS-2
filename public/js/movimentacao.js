@@ -145,8 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Passo 1: Escanear Máquina
     const scannerMaquina = criarScannerComManual('scanner-container-maquina', 'iniciar-scanner-maquina', 'input-manual-maquina', 'btn-manual-maquina', async (maquinaId) => {
         try {
-            const response = await fetchWithAuth(`/api/maquina/${maquinaId}/compatibilidades`);
-            if (!response) return;
+            const response = await fetch(`/api/maquina/${maquinaId}/compatibilidades`);
             const result = await response.json();
             if (!response.ok) throw new Error(result.message);
 
@@ -178,8 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
         mensagemErro.classList.add('hidden');
 
         try {
-            const response = await fetchWithAuth(`/api/material/localizacao?tipo=${encodeURIComponent(tipoMaterial)}`);
-            if (!response) return;
+            const response = await fetch(`/api/material/localizacao?tipo=${encodeURIComponent(tipoMaterial)}`);
             const result = await response.json();
 
             // Se a resposta for um erro (como 404), lança um erro para ser pego pelo catch
@@ -210,7 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Passo 3: Escanear e VALIDAR Material
     const scannerMaterial = criarScannerComManual('scanner-container-material', 'iniciar-scanner-material', 'input-manual-material', 'btn-manual-material', async (materialLidoBarcode) => {
         try {
-            const response = await fetchWithAuth('/api/movimentacao/validar-material', {
+            const response = await fetch('/api/movimentacao/validar-material', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -241,7 +239,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (maquinaConfirmacaoId !== estadoDaMovimentacao.maquinaId) {
             // Se a máquina estiver errada, chama o backend para registrar a falha.
             try {
-                await fetchWithAuth('/api/movimentacao/finalizar', {
+                await fetch('/api/movimentacao/finalizar', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -268,7 +266,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // TERCEIRO: Com todos os dados validados, finaliza a operação.
         try {
-            const response = await fetchWithAuth('/api/movimentacao/finalizar', {
+            const response = await fetch('/api/movimentacao/finalizar', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
