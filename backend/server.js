@@ -1200,7 +1200,7 @@ app.get('/api/fornecedores', requireLogin, async (req, res) => {
 
 
 // ROTA PARA A QUALIDADE: Buscar dados de um lote para finalizar
-app.get('/api/lote/para-identificar/:barcode', requireLogin, async (req, res) => {
+app.get('/api/lote/para-identificar/:barcode(*)', requireLogin, async (req, res) => {
     const { barcode } = req.params;
     try {
         const [lotes] = await pool.query(
