@@ -1,0 +1,58 @@
+# Deploy automático para ambiente de Staging
+# Testa mudanças antes de ir para produção
+
+name: Deploy to Staging - barcoders-staging
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js version
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20.x'
+
+      - name: npm install, build, and test
+        run: |
+          npm install --production --no-optional
+          npm run build --if-present
+        env:
+          PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: true
+
+      - name: Upload artifact for deployment job
+        uses: actions/upload-artifact@v4
+        with:
+          name: node-app-staging
+          path: .
+
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: 'Staging'
+      url: https://barcoders-staging.azurewebsites.net
+
+    steps:
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v4
+        with:
+          name: node-app-staging
+      
+      - name: 'Deploy to Azure Web App - Staging'
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'barcoders-staging'
+          slot-name: 'Production'
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_STAGING }}
+          package: .
