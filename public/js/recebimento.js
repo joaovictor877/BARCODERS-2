@@ -12,7 +12,10 @@ document.addEventListener('DOMContentLoaded', () => {
     async function carregarDadosIniciais() {
         // Carregar Fornecedores
         fetch('/api/fornecedores').then(res => res.json()).then(data => {
-            if(data.success) data.fornecedores.forEach(f => fornecedorSelect.add(new Option(f.Nome, f.CNPJ)));
+            if (data.success) {
+                fornecedorSelect.innerHTML = '';
+                data.fornecedores.forEach(f => fornecedorSelect.add(new Option(f.Nome, f.CNPJ)));
+            }
         });
         // Carregar Berços
         const bercoRes = await fetch('/api/bercos/disponiveis');
@@ -33,11 +36,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    /**
+     * Função para abrir a página de impressão em uma nova aba.
+     */
+    function abrirPaginaDeImpressao(dados) {
+        localStorage.setItem('dadosParaImpressao', JSON.stringify(dados));
+        const printWindow = window.open('/print/impressao_provisoria.html', '_blank');
+        if (printWindow) {
+            printWindow.focus();
+        } else {
+            alert('Por favor, habilite pop-ups para este site para poder imprimir a etiqueta.');
+        }
+    }
+
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         successMessage.classList.add('hidden');
         errorMessage.classList.add('hidden');
-        
+
         const formData = new FormData(form);
         const data = Object.fromEntries(formData.entries());
 
@@ -51,6 +67,23 @@ document.addEventListener('DOMContentLoaded', () => {
         if (response.ok) {
             successMessage.innerHTML = `${result.message}<br><strong>Código do Lote: ${result.codigoLote}</strong>`;
             successMessage.classList.remove('hidden');
+
+            // Dados para Etiqueta Provisória
+            const dadosEtiqueta = {
+                fornecedor: fornecedorSelect.options[fornecedorSelect.selectedIndex].text,
+                denominacao: "AGUARDANDO IDENTIFICAÇÃO",
+                codPeca: "PROVISÓRIO",
+                item: "-",
+                operador: "Recebimento",
+                dataRec: new Date().toLocaleDateString('pt-BR'),
+                qtdRecebida: "A Conferir",
+                corrida: "-",
+                observacao: `Local: ${bercoSelect.options[bercoSelect.selectedIndex].text} - Prat. ${prateleiraSelect.value}`,
+                codigoLote: result.codigoLote
+            };
+
+            abrirPaginaDeImpressao(dadosEtiqueta);
+
             form.reset();
             carregarDadosIniciais(); // Recarrega berços para atualizar disponibilidade
         } else {

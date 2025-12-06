@@ -40,7 +40,7 @@
 
         .field {
             flex: 1;
-            text-align: center;
+            /* text-align: left; Default alignment */
         }
 
         .label {
@@ -91,7 +91,7 @@
 
             const html = `
                 <div class="etiqueta">
-                    <div class="header">ETIQUETA PROVISÓRIA</div>
+                    <div class="header">ETIQUETA DE IDENTIFICAÇÃO</div>
                     
                     <div class="row">
                         <div class="field">
@@ -108,9 +108,13 @@
                     </div>
 
                     <div class="row">
-                        <div class="field" style="text-align: center;">
+                        <div class="field">
                             <div class="label">CÓD. PEÇA:</div>
                             <div class="value">${dados.codPeca || ''}</div>
+                        </div>
+                        <div class="field">
+                            <div class="label">ITEM:</div>
+                            <div class="value">${dados.item || ''}</div>
                         </div>
                     </div>
 
@@ -122,6 +126,17 @@
                         <div class="field">
                             <div class="label">DATA REC.:</div>
                             <div class="value">${dados.dataRec || ''}</div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="field">
+                            <div class="label">QTD RECEBIDA:</div>
+                            <div class="value">${dados.qtdRecebida || ''}</div>
+                        </div>
+                        <div class="field">
+                            <div class="label">CORRIDA:</div>
+                            <div class="value">${dados.corrida || ''}</div>
                         </div>
                     </div>
 
@@ -148,9 +163,6 @@
                     displayValue: true
                 });
             }
-
-            // Opcional: Imprimir automaticamente
-            // window.print();
         });
     </script>
 </body>

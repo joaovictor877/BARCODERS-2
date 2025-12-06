@@ -3,11 +3,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const buscaSection = document.getElementById('busca-section');
     const formSection = document.getElementById('form-section');
     const qualidadeForm = document.getElementById('qualidadeForm');
-    
+
     const barcodeInput = document.getElementById('barcodeInput');
     const buscarBtn = document.getElementById('buscarBtn');
     const finalizarBtn = document.getElementById('finalizarBtn');
-    
+
     const loteBarcodeSpan = document.getElementById('lote-barcode');
     const loteFornecedorSpan = document.getElementById('lote-fornecedor');
     const loteLocalSpan = document.getElementById('lote-local');
@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     function abrirPaginaDeImpressao(dados) {
         localStorage.setItem('dadosParaImpressao', JSON.stringify(dados));
-        const printWindow = window.open('/print/impressao.html', '_blank');
+        const printWindow = window.open('/print/impressao_definitiva.html', '_blank');
         if (printWindow) {
             printWindow.focus();
         } else {
@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (result) {
                 barcodeInput.value = result.text;
                 resetScanner();
-                new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU'+Array(300).join('123')).play();
+                new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU' + Array(300).join('123')).play();
                 buscarLote();
             }
             if (err && !(err instanceof ZXing.NotFoundException)) {
@@ -63,48 +63,48 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-startCameraBtn.addEventListener('click', () => {
-    errorMessage.classList.add('hidden');
-    startCameraBtn.classList.add('hidden');
-    scannerContainer.classList.remove('hidden');
-    stopCameraBtn.classList.remove('hidden');
+    startCameraBtn.addEventListener('click', () => {
+        errorMessage.classList.add('hidden');
+        startCameraBtn.classList.add('hidden');
+        scannerContainer.classList.remove('hidden');
+        stopCameraBtn.classList.remove('hidden');
 
-    codeReader.listVideoInputDevices()
-        .then((videoInputDevices) => {
-            if (videoInputDevices.length > 0) {
-                selectedDeviceId = videoInputDevices[0].deviceId; // Padrão
-                
-                // Só mostra o seletor se houver mais de uma câmera
-                if (videoInputDevices.length > 1) {
-                    videoSelect.innerHTML = '';
-                    videoInputDevices.forEach((device) => {
-                        const option = new Option(device.label || `Câmera ${videoSelect.options.length + 1}`, device.deviceId);
-                        videoSelect.appendChild(option);
-                    });
-                    cameraControls.classList.remove('hidden');
+        codeReader.listVideoInputDevices()
+            .then((videoInputDevices) => {
+                if (videoInputDevices.length > 0) {
+                    selectedDeviceId = videoInputDevices[0].deviceId; // Padrão
+
+                    // Só mostra o seletor se houver mais de uma câmera
+                    if (videoInputDevices.length > 1) {
+                        videoSelect.innerHTML = '';
+                        videoInputDevices.forEach((device) => {
+                            const option = new Option(device.label || `Câmera ${videoSelect.options.length + 1}`, device.deviceId);
+                            videoSelect.appendChild(option);
+                        });
+                        cameraControls.classList.remove('hidden');
+                    }
+
+                    startDecoding();
+                } else {
+                    errorMessage.textContent = 'Nenhuma câmera encontrada.';
+                    errorMessage.classList.remove('hidden');
+                    resetScanner();
                 }
-                
-                startDecoding();
-            } else {
-                errorMessage.textContent = 'Nenhuma câmera encontrada.';
+            }).catch(err => {
+                console.error(err);
+                errorMessage.textContent = 'Erro ao acessar dispositivos de vídeo.';
                 errorMessage.classList.remove('hidden');
                 resetScanner();
-            }
-        }).catch(err => {
-            console.error(err);
-            errorMessage.textContent = 'Erro ao acessar dispositivos de vídeo.';
-            errorMessage.classList.remove('hidden');
-            resetScanner();
-        });
-});
+            });
+    });
 
-stopCameraBtn.addEventListener('click', resetScanner);
+    stopCameraBtn.addEventListener('click', resetScanner);
 
-videoSelect.addEventListener('change', () => {
-    selectedDeviceId = videoSelect.value;
-    codeReader.reset();
-    startDecoding();
-});
+    videoSelect.addEventListener('change', () => {
+        selectedDeviceId = videoSelect.value;
+        codeReader.reset();
+        startDecoding();
+    });
 
     /**
      * Função para buscar os detalhes do lote no backend.
@@ -158,7 +158,7 @@ videoSelect.addEventListener('change', () => {
 
         const formData = new FormData(qualidadeForm);
         const data = Object.fromEntries(formData.entries());
-        
+
         data.barcode = loteBarcodeSpan.textContent;
 
         try {
@@ -174,7 +174,7 @@ videoSelect.addEventListener('change', () => {
             }
 
             abrirPaginaDeImpressao(result.dadosEtiqueta);
-            
+
             qualidadeForm.reset();
             barcodeInput.value = '';
             formSection.classList.add('hidden');
