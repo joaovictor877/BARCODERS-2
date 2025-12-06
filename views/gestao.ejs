@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,6 +9,7 @@
     <!-- Biblioteca de Gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body class="bg-gray-100">
     <div class="container mx-auto px-6 py-12">
         <div class="flex justify-between items-center mb-8">
@@ -17,11 +19,26 @@
 
         <!-- KPIs (Key Performance Indicators) -->
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-6 mb-8">
-            <div class="bg-white p-6 rounded-lg shadow-md"><h3 class="text-gray-500">Lotes em Estoque</h3><p id="kpi-total-stock" class="text-3xl font-bold">...</p></div>
-            <div class="bg-white p-6 rounded-lg shadow-md"><h3 class="text-gray-500">Aguardando Identificação</h3><p id="kpi-awaiting-id" class="text-3xl font-bold text-yellow-600">...</p></div>
-            <div class="bg-white p-6 rounded-lg shadow-md"><h3 class="text-gray-500">Transações Hoje</h3><p id="kpi-movements-today" class="text-3xl font-bold">...</p></div>
-            <div class="bg-white p-6 rounded-lg shadow-md"><h3 class="text-gray-500">Unidades Movidas Hoje</h3><p id="kpi-units-moved-today" class="text-3xl font-bold text-blue-600">...</p></div>
-            <div class="bg-white p-6 rounded-lg shadow-md"><h3 class="text-gray-500">Funcionários</h3><p id="kpi-total-employees" class="text-3xl font-bold">...</p></div>
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-gray-500">Lotes em Estoque</h3>
+                <p id="kpi-total-stock" class="text-3xl font-bold">...</p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-gray-500">Aguardando Identificação</h3>
+                <p id="kpi-awaiting-id" class="text-3xl font-bold text-yellow-600">...</p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-gray-500">Transações Hoje</h3>
+                <p id="kpi-movements-today" class="text-3xl font-bold">...</p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-gray-500">Unidades Movidas Hoje</h3>
+                <p id="kpi-units-moved-today" class="text-3xl font-bold text-blue-600">...</p>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-gray-500">Funcionários</h3>
+                <p id="kpi-total-employees" class="text-3xl font-bold">...</p>
+            </div>
         </div>
 
         <!-- Gráficos e Tabelas -->
@@ -77,4 +94,5 @@
     </div>
     <script src="/js/gestao.js"></script>
 </body>
+
 </html>

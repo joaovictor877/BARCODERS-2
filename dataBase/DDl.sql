@@ -1,17 +1,14 @@
--- DDL.sql (ATUALIZADO COM BERÇOS E FLUXO SEPARADO)
+-- DDL.sql 
 
--- Se o banco de dados já existir, apague-o para um recomeço limpo (opcional, cuidado em produção)
 DROP DATABASE IF EXISTS estoque;
 CREATE DATABASE IF NOT EXISTS estoque;
 USE estoque;
 
 -- --- ETAPA 1: DELETAR TABELAS NA ORDEM INVERSA DE DEPENDÊNCIA ---
--- Deleta primeiro as tabelas que dependem de outras (as "filhas")
 DROP TABLE IF EXISTS Registro_Movimentacao;
 DROP TABLE IF EXISTS Registro_Identificacao_MP;
 DROP TABLE IF EXISTS Registro_Entrada_MP;
 DROP TABLE IF EXISTS Compativel;
--- Agora que as "filhas" se foram, podemos deletar as "pais"
 DROP TABLE IF EXISTS Estoque_MP;
 DROP TABLE IF EXISTS Bercos;
 DROP TABLE IF EXISTS Maquinas;
@@ -102,9 +99,12 @@ CREATE TABLE Registro_Entrada_MP (
     DataHoraRegistro DATETIME,
     fk_Estoque_MP_BarCode VARCHAR(255) NOT NULL,
     fk_Funcionarios_IDFuncionario BIGINT NULL,
+    fk_Berco_ID BIGINT NULL,
+    Prateleira CHAR(1) NULL,
     PRIMARY KEY (IDEntradaRegistro),
     FOREIGN KEY (fk_Estoque_MP_BarCode) REFERENCES Estoque_MP (BarCode) ON DELETE CASCADE,
-    FOREIGN KEY (fk_Funcionarios_IDFuncionario) REFERENCES Funcionarios (IDFuncionario) ON DELETE SET NULL
+    FOREIGN KEY (fk_Funcionarios_IDFuncionario) REFERENCES Funcionarios (IDFuncionario) ON DELETE SET NULL,
+    FOREIGN KEY (fk_Berco_ID) REFERENCES Bercos (ID) ON DELETE SET NULL
 );
 
 CREATE TABLE Registro_Identificacao_MP (
@@ -113,6 +113,7 @@ CREATE TABLE Registro_Identificacao_MP (
     fk_Funcionarios_IDFuncionario BIGINT NULL,
     fk_Tipos_MP_TipoMP VARCHAR(255) NOT NULL,
     fk_Estoque_MP_BarCode VARCHAR(255) NOT NULL,
+    Tempo_Ate_Identificacao INT NULL, -- Tempo em segundos da entrada até a identificação
     PRIMARY KEY (IDIdentificacao),
     FOREIGN KEY (fk_Funcionarios_IDFuncionario) REFERENCES Funcionarios (IDFuncionario) ON DELETE SET NULL,
     FOREIGN KEY (fk_Tipos_MP_TipoMP) REFERENCES Tipos_MP (TipoMP),
@@ -123,14 +124,17 @@ CREATE TABLE Registro_Movimentacao (
     IDMovimento BIGINT NOT NULL AUTO_INCREMENT,
     DataHoraMovimento DATETIME,
     QuantidadeMovida INT NOT NULL,
-    fk_Estoque_MP_BarCode VARCHAR(255) NULL, -- PERMITE NULL para registrar scans de códigos inexistentes
-    BarcodeLido VARCHAR(255) NULL, -- NOVA COLUNA para armazenar o que foi escaneado
+    fk_Estoque_MP_BarCode VARCHAR(255) NULL, 
+    BarcodeLido VARCHAR(255) NULL, 
     fk_Maquina_Identificacao BIGINT NOT NULL,
     fk_Funcionarios_IDFuncionario BIGINT NULL,
     OperacaoValida TINYINT(1) NOT NULL,
     TipoErro VARCHAR(50) NOT NULL,
+    Tempo_Verificacao_Material INT NULL, -- Segundos
+    Tempo_Verificacao_Maquina INT NULL, -- Segundos
+    Tempo_Total_Operacao INT NULL, -- Segundos
     PRIMARY KEY (IDMovimento),
-    FOREIGN KEY (fk_Estoque_MP_BarCode) REFERENCES Estoque_MP (BarCode) ON DELETE SET NULL, -- MUDADO PARA SET NULL
+    FOREIGN KEY (fk_Estoque_MP_BarCode) REFERENCES Estoque_MP (BarCode) ON DELETE SET NULL, 
     FOREIGN KEY (fk_Maquina_Identificacao) REFERENCES Maquinas (Identificacao),
     FOREIGN KEY (fk_Funcionarios_IDFuncionario) REFERENCES Funcionarios (IDFuncionario) ON DELETE SET NULL
 );

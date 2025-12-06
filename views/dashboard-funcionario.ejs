@@ -1,50 +1,116 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <title>Dashboard de Funcionário</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Biblioteca de Gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body class="bg-gray-100">
     <div class="container mx-auto px-6 py-12">
         <a href="/lobby" class="text-indigo-600 mb-8 inline-block">&larr; Voltar ao Lobby</a>
         <h1 class="text-4xl font-bold mb-8">Dashboard de Performance de Funcionário</h1>
 
-        <!-- Seletor de Funcionário -->
-        <div class="bg-white p-6 rounded shadow-md max-w-3xl mx-auto mb-8">
-            <label for="employee-select" class="block text-lg font-medium">Selecione um Funcionário</label>
-            <div class="flex gap-2 mt-2">
-                <select id="employee-select" class="w-full p-3 border rounded-lg">
-                    <option value="">Selecione...</option>
-                    <% employees.forEach(emp => { %>
-                        <option value="<%= emp.IDFuncionario %>"><%= emp.Nome %> (<%= emp.Cargo %>)</option>
-                    <% }); %>
-                </select>
-                <button id="view-dashboard-btn" class="bg-blue-600 text-white px-8 rounded-lg font-medium">Ver</button>
+        <!-- Filtros Globais -->
+        <div class="bg-white p-6 rounded shadow-md max-w-5xl mx-auto mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Data Inicio -->
+                <div>
+                    <label class="block text-gray-700 font-bold mb-2">Data Início</label>
+                    <input type="date" id="date-start" class="w-full p-2 border rounded">
+                </div>
+                <!-- Data Fim -->
+                <div>
+                    <label class="block text-gray-700 font-bold mb-2">Data Fim</label>
+                    <input type="date" id="date-end" class="w-full p-2 border rounded">
+                </div>
+                <!-- Funcionario -->
+                <div>
+                    <label for="employee-select" class="block text-gray-700 font-bold mb-2">Funcionário</label>
+                    <select id="employee-select" class="w-full p-2 border rounded">
+                        <option value="">Selecione...</option>
+                        <option value="geral">Visão Geral (Todos)</option>
+                        <% employees.forEach(emp=> { %>
+                            <option value="<%= emp.IDFuncionario %>">
+                                <%= emp.Nome %> (<%= emp.Cargo %>)
+                            </option>
+                            <% }); %>
+                    </select>
+                </div>
+            </div>
+            <div class="mt-4 flex justify-end">
+                <button id="view-dashboard-btn"
+                    class="bg-blue-600 text-white px-8 py-2 rounded-lg font-medium hover:bg-blue-700">Filtrar e
+                    Visualizar</button>
             </div>
         </div>
 
         <!-- Área de Resultados (preenchida por JS) -->
-        <div id="dashboard-results" class="hidden max-w-5xl mx-auto">
-            <!-- Dashboard de Movimentação -->
-            <div id="movimentacao-dashboard" class="hidden space-y-6">
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                    <div class="bg-white p-4 rounded shadow"><h3 class="text-gray-500">Total de Operações</h3><p id="stat-total" class="text-2xl font-bold">0</p></div>
-                    <div class="bg-green-100 p-4 rounded shadow"><h3 class="text-green-700">Acertos</h3><p id="stat-acertos" class="text-2xl font-bold">0</p></div>
-                    <div class="bg-red-100 p-4 rounded shadow"><h3 class="text-red-700">Erros</h3><p id="stat-erros" class="text-2xl font-bold">0</p></div>
-                    <div class="bg-blue-100 p-4 rounded shadow"><h3 class="text-blue-700">Taxa de Acerto</h3><p id="stat-taxa" class="text-2xl font-bold">0%</p></div>
-                </div>
-                <div id="erros-por-tipo" class="bg-white p-4 rounded shadow"></div>
-                <div class="bg-white p-4 rounded shadow">
-                    <h3 class="font-bold mb-2">Histórico de Movimentações</h3>
-                    <table class="w-full text-sm"><thead class="bg-gray-50"><tr><th>Data</th><th>Lote</th><th>Qtd</th><th>Status</th><th>Erro</th></tr></thead><tbody id="movimentacao-table"></tbody></table>
+        <div id="dashboard-results" class="hidden max-w-6xl mx-auto space-y-8">
+
+            <!-- Cards de Estatísticas de Tempo (Dinâmico) -->
+            <div id="time-stats-container" class="hidden bg-white p-6 rounded shadow-md">
+                <h3 class="text-xl font-bold mb-4 text-gray-800">Análise de Tempo (Segundos)</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="time-stats-grid">
+                    <!-- Injetado via JS -->
                 </div>
             </div>
+
+            <!-- Gráfico de Performance -->
+            <div id="chart-container" class="hidden bg-white p-6 rounded shadow-md">
+                <h3 class="text-xl font-bold mb-4 text-gray-800">Evolução Temporal</h3>
+                <canvas id="performanceChart" height="100"></canvas>
+            </div>
+
+            <!-- Dashboard de Movimentação (Dados Operacionais) -->
+            <div id="movimentacao-dashboard" class="hidden space-y-6">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                    <div class="bg-white p-4 rounded shadow">
+                        <h3 class="text-gray-500">Total de Operações</h3>
+                        <p id="stat-total" class="text-2xl font-bold">0</p>
+                    </div>
+                    <div class="bg-green-100 p-4 rounded shadow">
+                        <h3 class="text-green-700">Acertos</h3>
+                        <p id="stat-acertos" class="text-2xl font-bold">0</p>
+                    </div>
+                    <div class="bg-red-100 p-4 rounded shadow">
+                        <h3 class="text-red-700">Erros</h3>
+                        <p id="stat-erros" class="text-2xl font-bold">0</p>
+                    </div>
+                    <div class="bg-blue-100 p-4 rounded shadow">
+                        <h3 class="text-blue-700">Taxa de Acerto</h3>
+                        <p id="stat-taxa" class="text-2xl font-bold">0%</p>
+                    </div>
+                </div>
+                <div id="erros-por-tipo" class="bg-white p-4 rounded shadow"></div>
+
+                <div class="bg-white p-4 rounded shadow">
+                    <h3 class="font-bold mb-2">Histórico Detalhado</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="p-2 text-left">Data</th>
+                                    <th class="p-2 text-left">Lote</th>
+                                    <th class="p-2 text-left">Qtd</th>
+                                    <th class="p-2 text-left">Tempo Total(s)</th>
+                                    <th class="p-2 text-left">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="movimentacao-table"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
             <!-- Outros Dashboards -->
             <div id="qualidade-dashboard" class="hidden bg-white p-4 rounded shadow"></div>
             <div id="recebimento-dashboard" class="hidden bg-white p-4 rounded shadow"></div>
-            <div id="recebimento-dashboard" class="hidden bg-white p-6 rounded-lg shadow-md"></div>
         </div>
     </div>
     <script src="/js/dashboard-funcionario.js"></script>
 </body>
+
 </html>

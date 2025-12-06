@@ -1,34 +1,40 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Identificação de Material (Qualidade)</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    
+
     <!-- Biblioteca para leitura de código de barras pela câmera -->
     <script type="text/javascript" src="https://unpkg.com/@zxing/library@latest"></script>
-    
+
     <!-- Verificação de autenticação -->
-    <script src="/js/auth-check.js"></script>
-    
+    <!-- Verificação de autenticação removida (backend handle) -->
+
     <!-- Link para o CSS da etiqueta de impressão -->
     <link rel="stylesheet" href="/css/etiqueta-impressao.css">
 </head>
+
 <body class="bg-gray-100">
 
     <div class="container mx-auto px-6 py-12">
         <a href="/lobby" class="text-indigo-600 hover:text-indigo-800 mb-8 inline-block">&larr; Voltar ao Lobby</a>
         <h1 class="text-4xl font-bold text-gray-800 mb-8">Identificação de Material (Qualidade)</h1>
-        
+
         <!-- Etapa 1: Busca do Lote (Visível por padrão) -->
         <div id="busca-section" class="bg-white p-8 rounded-lg shadow-md max-w-2xl mx-auto">
-            <label for="barcodeInput" class="block text-lg font-medium text-gray-700">Escanear ou Digitar Código do Lote</label>
+            <label for="barcodeInput" class="block text-lg font-medium text-gray-700">Escanear ou Digitar Código do
+                Lote</label>
             <div class="flex gap-2 mt-2">
-                <input type="text" id="barcodeInput" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" autofocus placeholder="Aguardando código...">
-                <button id="buscarBtn" class="bg-blue-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-blue-700">Buscar</button>
+                <input type="text" id="barcodeInput"
+                    class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" autofocus
+                    placeholder="Aguardando código...">
+                <button id="buscarBtn"
+                    class="bg-blue-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-blue-700">Buscar</button>
             </div>
-            
+
             <!-- Elementos do Scanner da Câmera -->
             <div class="border-t border-dashed mt-6 pt-6">
                 <div id="scanner-container" class="w-full border rounded-lg overflow-hidden hidden bg-black">
@@ -38,8 +44,12 @@
                     <label for="videoSource" class="text-sm">Câmera:</label>
                     <select id="videoSource" class="flex-grow p-1 border rounded text-sm"></select>
                 </div>
-                <button type="button" id="startCameraBtn" class="w-full mt-4 bg-gray-700 text-white px-4 py-3 rounded-lg font-medium hover:bg-gray-800">Escanear com a Câmera</button>
-                <button type="button" id="stopCameraBtn" class="w-full mt-2 bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 hidden">Parar Câmera</button>
+                <button type="button" id="startCameraBtn"
+                    class="w-full mt-4 bg-gray-700 text-white px-4 py-3 rounded-lg font-medium hover:bg-gray-800">Escanear
+                    com a Câmera</button>
+                <button type="button" id="stopCameraBtn"
+                    class="w-full mt-2 bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 hidden">Parar
+                    Câmera</button>
             </div>
         </div>
 
@@ -47,55 +57,67 @@
         <div id="form-section" class="hidden bg-white p-8 rounded-lg shadow-md max-w-2xl mx-auto mt-8">
             <div class="mb-6 bg-gray-50 p-4 rounded-lg border">
                 <h3 class="font-bold text-xl text-gray-800 mb-2">Detalhes do Lote a ser Identificado</h3>
-                <p><strong>Código do Lote:</strong> <span id="lote-barcode" class="font-mono text-indigo-600"></span></p>
+                <p><strong>Código do Lote:</strong> <span id="lote-barcode" class="font-mono text-indigo-600"></span>
+                </p>
                 <p><strong>Fornecedor:</strong> <span id="lote-fornecedor" class="font-semibold"></span></p>
                 <p><strong>Local Armazenado:</strong> <span id="lote-local" class="font-semibold"></span></p>
             </div>
-            
+
             <form id="qualidadeForm">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label for="denominacaoMaterial" class="block text-sm font-medium text-gray-700">Denominação do Material</label>
-                        <select id="denominacaoMaterial" name="denominacaoMaterial" required class="mt-1 w-full p-2 border border-gray-300 rounded-md">
+                        <label for="denominacaoMaterial" class="block text-sm font-medium text-gray-700">Denominação do
+                            Material</label>
+                        <select id="denominacaoMaterial" name="denominacaoMaterial" required
+                            class="mt-1 w-full p-2 border border-gray-300 rounded-md">
                             <option value="" disabled selected>Selecione o tipo</option>
-                            <% if (tiposMP && tiposMP.length > 0) { %>
-                                <% tiposMP.forEach(t => { %>
-                                    <% if (t.TipoMP !== 'Aguardando Identificação') { %>
-                                        <option value="<%= t.TipoMP %>"><%= t.TipoMP %></option>
-                                    <% } %>
-                                <% }); %>
-                            <% } %>
+                            <% if (tiposMP && tiposMP.length> 0) { %>
+                                <% tiposMP.forEach(t=> { %>
+                                    <% if (t.TipoMP !=='Aguardando Identificação' ) { %>
+                                        <option value="<%= t.TipoMP %>">
+                                            <%= t.TipoMP %>
+                                        </option>
+                                        <% } %>
+                                            <% }); %>
+                                                <% } %>
                         </select>
                     </div>
                     <div>
                         <label for="codPeca" class="block text-sm font-medium text-gray-700">Cód. Peça</label>
-                        <input type="text" id="codPeca" name="codPeca" required class="mt-1 w-full p-2 border border-gray-300 rounded-md">
+                        <input type="text" id="codPeca" name="codPeca" required
+                            class="mt-1 w-full p-2 border border-gray-300 rounded-md">
                     </div>
                     <div>
                         <label for="item" class="block text-sm font-medium text-gray-700">Item</label>
-                        <input type="text" id="item" name="item" required class="mt-1 w-full p-2 border border-gray-300 rounded-md">
+                        <input type="text" id="item" name="item" required
+                            class="mt-1 w-full p-2 border border-gray-300 rounded-md">
                     </div>
-                     <div>
-                        <label for="quantidade" class="block text-sm font-medium text-gray-700">Quantidade Recebida</label>
-                        <input type="number" id="quantidade" name="quantidade" required min="1" class="mt-1 w-full p-2 border border-gray-300 rounded-md">
+                    <div>
+                        <label for="quantidade" class="block text-sm font-medium text-gray-700">Quantidade
+                            Recebida</label>
+                        <input type="number" id="quantidade" name="quantidade" required min="1"
+                            class="mt-1 w-full p-2 border border-gray-300 rounded-md">
                     </div>
-                     <div>
+                    <div>
                         <label for="corrida" class="block text-sm font-medium text-gray-700">Corrida</label>
-                        <input type="text" id="corrida" name="corrida" required class="mt-1 w-full p-2 border border-gray-300 rounded-md">
+                        <input type="text" id="corrida" name="corrida" required
+                            class="mt-1 w-full p-2 border border-gray-300 rounded-md">
                     </div>
                     <div class="md:col-span-2">
                         <label for="observacao" class="block text-sm font-medium text-gray-700">Observação</label>
-                        <textarea id="observacao" name="observacao" rows="3" class="mt-1 w-full p-2 border border-gray-300 rounded-md"></textarea>
+                        <textarea id="observacao" name="observacao" rows="3"
+                            class="mt-1 w-full p-2 border border-gray-300 rounded-md"></textarea>
                     </div>
                 </div>
                 <div class="flex justify-end pt-6 mt-6 border-t">
-                    <button type="submit" id="finalizarBtn" class="w-full md:w-auto bg-indigo-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-indigo-700">
+                    <button type="submit" id="finalizarBtn"
+                        class="w-full md:w-auto bg-indigo-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-indigo-700">
                         Finalizar e Gerar Etiqueta
                     </button>
                 </div>
             </form>
         </div>
-        
+
         <!-- Mensagem de erro global -->
         <div id="errorMessage" class="hidden mt-4 p-4 bg-red-100 text-red-700 rounded-lg max-w-2xl mx-auto"></div>
     </div>
@@ -113,31 +135,46 @@
                 <div class="form-id">AMGGQ006-R01</div>
             </header>
             <section class="material-info">
-                <div class="field field-fornecedor"><span class="label">FORNECEDOR</span><span class="value" id="pdf-fornecedor"></span></div>
-                <div class="field field-denominacao"><span class="label">DENOMINAÇÃO DO MATERIAL</span><span class="value" id="pdf-denominacao"></span></div>
-                <div class="field field-codpeca"><span class="label">COD. PEÇA</span><span class="value" id="pdf-codpeca"></span></div>
+                <div class="field field-fornecedor"><span class="label">FORNECEDOR</span><span class="value"
+                        id="pdf-fornecedor"></span></div>
+                <div class="field field-denominacao"><span class="label">DENOMINAÇÃO DO MATERIAL</span><span
+                        class="value" id="pdf-denominacao"></span></div>
+                <div class="field field-codpeca"><span class="label">COD. PEÇA</span><span class="value"
+                        id="pdf-codpeca"></span></div>
             </section>
             <section class="main-body">
-                <div class="vertical-label-cell item-label-cell"><div class="vertical-label">ITEM</div></div>
+                <div class="vertical-label-cell item-label-cell">
+                    <div class="vertical-label">ITEM</div>
+                </div>
                 <div class="content-cell item-content-cell" id="pdf-item"></div>
-                <div class="vertical-label-cell data-label-cell"><div class="vertical-label">DADOS DO RECEBIMENTO</div></div>
+                <div class="vertical-label-cell data-label-cell">
+                    <div class="vertical-label">DADOS DO RECEBIMENTO</div>
+                </div>
                 <div class="content-cell data-content-cell">
                     <div class="receiving-data">
                         <div class="row row-1">
-                            <div class="field field-rec"><span class="label">REC. MP (Operador)</span><span class="value" id="pdf-operador"></span></div>
-                            <div class="field field-data-rec"><span class="label">DATA REC.</span><span class="value" id="pdf-datarec"></span></div>
-                            <div class="field field-qtd-kg"><span class="label">QTD RECEBIDA (KG / PÇ)</span><span class="value" id="pdf-qtd"></span></div>
-                            <div class="field field-amarrados"><span class="label">QTD AMARRADOS</span><span class="value" id="pdf-amarrados"></span></div>
+                            <div class="field field-rec"><span class="label">REC. MP (Operador)</span><span
+                                    class="value" id="pdf-operador"></span></div>
+                            <div class="field field-data-rec"><span class="label">DATA REC.</span><span class="value"
+                                    id="pdf-datarec"></span></div>
+                            <div class="field field-qtd-kg"><span class="label">QTD RECEBIDA (KG / PÇ)</span><span
+                                    class="value" id="pdf-qtd"></span></div>
+                            <div class="field field-amarrados"><span class="label">QTD AMARRADOS</span><span
+                                    class="value" id="pdf-amarrados"></span></div>
                         </div>
                         <div class="row row-2">
-                            <div class="field field-corrida"><span class="label">CORRIDA</span><span class="value" id="pdf-corrida"></span></div>
-                            <div class="field field-obs"><span class="label">OBSERVAÇÃO</span><span class="value" id="pdf-obs"></span></div>
+                            <div class="field field-corrida"><span class="label">CORRIDA</span><span class="value"
+                                    id="pdf-corrida"></span></div>
+                            <div class="field field-obs"><span class="label">OBSERVAÇÃO</span><span class="value"
+                                    id="pdf-obs"></span></div>
                         </div>
                     </div>
                 </div>
             </section>
             <section class="lot-section">
-                <div class="vertical-label-cell"><div class="vertical-label">NÚMERO DE LOTE</div></div>
+                <div class="vertical-label-cell">
+                    <div class="vertical-label">NÚMERO DE LOTE</div>
+                </div>
                 <div class="lot-number-box">
                     <div class="not-applicable">Não Aplicável</div>
                     <svg id="pdf-barcode" class="lot-number"></svg>
@@ -149,4 +186,5 @@
 
     <script src="/js/qualidade.js"></script>
 </body>
+
 </html>

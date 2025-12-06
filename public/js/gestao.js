@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const renderStockChart = (stockData) => {
         if (stockChartInstance) stockChartInstance.destroy();
         const ctx = document.getElementById('stockChart').getContext('2d');
-        
+
         stockChartInstance = new Chart(ctx, {
             type: 'doughnut',
             data: {
@@ -87,7 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     label: 'Lotes por Tipo',
                     data: stockData.map(item => item.lotes),
                     backgroundColor: ['#4F46E5', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6'],
-                    borderColor: '#fff', 
+                    borderColor: '#fff',
                     borderWidth: 2
                 }]
             },
@@ -97,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     legend: { position: 'top' },
                     tooltip: {
                         callbacks: {
-                            label: function(context) {
+                            label: function (context) {
                                 const dataIndex = context.dataIndex;
                                 const item = stockData[dataIndex];
                                 return [`Lotes: ${item.lotes}`, `Quantidade Total: ${item.totalQuantidade || 0}`];

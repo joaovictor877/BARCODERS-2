@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
         maquina: document.getElementById('passo-1-maquina'),
         material: document.getElementById('passo-2-material'),
         buscar: document.getElementById('passo-3-buscar'),
+        quantidade: document.getElementById('passo-3-quantidade'),
         confirmar: document.getElementById('passo-4-confirmar'),
     };
     const mensagemSucesso = document.getElementById('mensagem-sucesso');
@@ -11,7 +12,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let estadoDaMovimentacao = {};
 
     function mostrarPasso(nomePasso) {
-        Object.values(passos).forEach(passo => passo.classList.add('hidden'));
+        Object.values(passos).forEach(passo => {
+            if (passo) passo.classList.add('hidden');
+        });
         if (passos[nomePasso]) {
             passos[nomePasso].classList.remove('hidden');
         }
@@ -24,6 +27,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // Limpa a lista de materiais para a próxima execução
         const lista = document.getElementById('lista-materiais');
         if (lista) lista.innerHTML = '';
+        // Reseta input de quantidade
+        const inputQtd = document.getElementById('input-quantidade');
+        if (inputQtd) inputQtd.value = '1';
+
         mostrarPasso('maquina');
     }
 
@@ -190,6 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('info-material-tipo').textContent = tipoMaterial;
             document.getElementById('info-localizacao').textContent = `${result.localizacao.NomeBerco}, Prateleira ${result.localizacao.Prateleira_Ocupada}`;
 
+            estadoDaMovimentacao.tsInicioPasso3 = Date.now(); // Inicio da contagem de tempo do fluxo
             mostrarPasso('buscar');
 
         } catch (error) {
@@ -208,6 +216,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Passo 3: Escanear e VALIDAR Material
     const scannerMaterial = criarScannerComManual('scanner-container-material', 'iniciar-scanner-material', 'input-manual-material', 'btn-manual-material', async (materialLidoBarcode) => {
         try {
+            // Chamada ao Backend para validar o material e obter quantidade
             const response = await fetch('/api/movimentacao/validar-material', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -217,20 +226,55 @@ document.addEventListener('DOMContentLoaded', () => {
                     materialLidoBarcode: materialLidoBarcode
                 })
             });
+
             const result = await response.json();
             if (!response.ok) throw new Error(result.message);
 
-            // Se a validação passou, armazena o material lido e avança
+            // Sucesso: Atualiza estado e UI
             estadoDaMovimentacao.materialLidoBarcode = materialLidoBarcode;
-            mostrarPasso('confirmar');
+            estadoDaMovimentacao.quantidadeDisponivel = result.quantidadeDisponivel || 0;
+
+            // Captura o timestamp de fim da verificação do material
+            estadoDaMovimentacao.tsFimPasso3 = Date.now();
+
+            // Atualiza a UI para mostrar a quantidade disponível
+            const infoQtdMsg = document.querySelector('#passo-3-quantidade .info-box p');
+            if (infoQtdMsg) {
+                infoQtdMsg.innerHTML = `Material confirmado! Quantidade em estoque: <strong>${estadoDaMovimentacao.quantidadeDisponivel}</strong>. Informe a quantidade a ser movida.`;
+            }
+
+            mostrarPasso('quantidade');
 
         } catch (error) {
-            // Se a validação falhou, o backend já registrou o erro.
-            // Apenas exibe a mensagem e mantém o usuário neste passo.
             exibirErroTemporario(error.message);
-            // Não precisa fazer mais nada, o usuário pode tentar escanear de novo.
         }
     });
+
+    // Passo 3.5: Confirmar Quantidade
+    const btnConfirmarQtd = document.getElementById('btn-confirmar-quantidade');
+    if (btnConfirmarQtd) {
+        btnConfirmarQtd.addEventListener('click', () => {
+            const inputQtd = document.getElementById('input-quantidade');
+            const qtd = parseInt(inputQtd.value);
+
+            if (!qtd || qtd <= 0) {
+                exibirErroTemporario('Quantidade inválida.');
+                return;
+            }
+
+            if (qtd > estadoDaMovimentacao.quantidadeDisponivel) {
+                exibirErroTemporario(`Quantidade insuficiente! Você só tem ${estadoDaMovimentacao.quantidadeDisponivel} unidades.`);
+                return;
+            }
+
+            estadoDaMovimentacao.quantidadeMovida = qtd;
+
+            // Inicia contagem do tempo de confirmação da máquina
+            estadoDaMovimentacao.tsInicioPassoConfirmacao = Date.now();
+
+            mostrarPasso('confirmar');
+        });
+    }
 
     // Passo 4: Confirmar Máquina e FINALIZAR
     const scannerConfirmacao = criarScannerComManual('scanner-container-confirmacao', 'iniciar-scanner-confirmacao', 'input-manual-confirmacao', 'btn-manual-confirmacao', async (maquinaConfirmacaoId) => {
@@ -256,24 +300,32 @@ document.addEventListener('DOMContentLoaded', () => {
             return; // Interrompe a execução
         }
 
-        // SEGUNDO: Se a máquina estiver correta, SÓ ENTÃO pede a quantidade.
-        const quantidade = prompt("Máquina confirmada! Digite a quantidade a ser movida:", "1");
-        if (!quantidade || isNaN(quantidade) || parseInt(quantidade) <= 0) {
-            exibirErroTemporario("Quantidade inválida. A operação foi cancelada. Reiniciando...");
-            setTimeout(resetarTudo, 2000);
-            return;
-        }
-
-        // TERCEIRO: Com todos os dados validados, finaliza a operação.
+        // SEGUNDO: Máquina correta -> Finaliza com a quantidade definida anteriormente
         try {
+            const tsFimOperacao = Date.now();
+
+            // Cálculos de Tempo (em segundos)
+            // Garantir que não dê NaN com verificações simples
+            const now = Date.now();
+            const tIni3 = estadoDaMovimentacao.tsInicioPasso3 || now;
+            const tFim3 = estadoDaMovimentacao.tsFimPasso3 || now;
+            const tIniConf = estadoDaMovimentacao.tsInicioPassoConfirmacao || now;
+
+            const tempoVerificacaoMaterial = Math.floor((tFim3 - tIni3) / 1000);
+            const tempoVerificacaoMaquina = Math.floor((tsFimOperacao - tIniConf) / 1000);
+            const tempoTotalOperacao = Math.floor((tsFimOperacao - tIni3) / 1000);
+
             const response = await fetch('/api/movimentacao/finalizar', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     maquinaId: estadoDaMovimentacao.maquinaId,
                     materialBarcode: estadoDaMovimentacao.materialLidoBarcode,
-                    maquinaConfirmacaoId: maquinaConfirmacaoId, // Agora será igual ao maquinaId
-                    quantidadeMovida: parseInt(quantidade)
+                    maquinaConfirmacaoId: maquinaConfirmacaoId,
+                    quantidadeMovida: estadoDaMovimentacao.quantidadeMovida,
+                    tempoVerificacaoMaterial,
+                    tempoVerificacaoMaquina,
+                    tempoTotalOperacao
                 })
             });
             const result = await response.json();

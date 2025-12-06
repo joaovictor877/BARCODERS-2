@@ -5,7 +5,7 @@
 <head>
     <title>Movimentação de Material</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="/js/auth-check.js"></script>
+    <!-- Verificação de autenticação removida (backend handle) -->
     <script type="text/javascript" src="https://unpkg.com/@zxing/library@latest"></script>
     <link rel="stylesheet" href="/css/movimentacao.css"> <!-- CSS para os passos -->
 </head>
@@ -64,6 +64,19 @@
                     </div>
                 </div>
             </div>
+            <!-- Passo 3.5: Definir Quantidade -->
+            <div id="passo-3-quantidade" class="passo hidden">
+                <h2 class="passo-titulo">Passo 3.5: Definir Quantidade</h2>
+                <div class="info-box">
+                    <p>Material confirmado! Informe a quantidade a ser movida.</p>
+                </div>
+                <div class="flex gap-2">
+                    <input type="number" id="input-quantidade" class="w-full p-3 border rounded text-lg" min="1"
+                        value="1" placeholder="Qtd">
+                    <button id="btn-confirmar-quantidade"
+                        class="bg-indigo-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-indigo-700">Confirmar</button>
+                </div>
+            </div>
 
             <!-- Passo 4: Confirmar Máquina -->
             <div id="passo-4-confirmar" class="passo hidden">
@@ -89,7 +102,7 @@
             <div id="mensagem-erro" class="feedback-erro hidden"></div>
         </div>
     </div>
-    <script src="/js/movimentacao.js"></script>
+    <script src="/js/movimentacao.js?v=2"></script>
 </body>
 
 </html>
